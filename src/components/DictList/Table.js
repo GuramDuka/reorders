@@ -1,11 +1,45 @@
+//------------------------------------------------------------------------------
 import React from 'react';
-//import PropTypes from 'prop-types';
-import axios from 'axios';
+//import axios from 'axios';
 import * as Mui from 'material-ui';
 import store from '../../store';
 import BACKEND_URL from '../../backend';
-import Base, { serializeURIParams, transform, newAction } from '../Base';
+import Base, {
+  serializeURIParams,
+  newAction
+} from '../Base';
+//------------------------------------------------------------------------------
+function transformRows(data) {
+  if( data.transform ) {
+    const { cols, dict, text } = data;
+    let { rows } = data;
+    
+    for( let i = rows.length - 1; i >= 0; i-- ) {
+      const row = rows[i];
+      let now = { lineNo : i + 1 };
 
+      for( let j in cols ) {
+        const v = row[j];
+
+        if( v !== null ) {
+          const n = cols[j];
+          now[n] = text[n] ? dict[v] : v;
+        }
+      }
+
+      rows[i] = now;
+    }
+
+    // delete data.transform;
+    // delete data.cols;
+    // delete data.dict;
+    // delete data.t;
+    return rows;
+  }
+
+  return data.rows;
+}
+//------------------------------------------------------------------------------
 class Table extends Base {
   static storedProps = {
     view        : {},
@@ -23,7 +57,7 @@ class Table extends Base {
     });
   };
   
-  static actionReload(path, options) {
+  /*static actionReload_(path, options) {
     return newAction(state => {
       let view = state.getIn([ ...path, 'view' ]).asMutable();
       let opts = { paramsSerializer : serializeURIParams };
@@ -34,7 +68,7 @@ class Table extends Base {
       //   };
 
       if( options && options.transformView && options.transformView.constructor === Function )
-        view = options.transformView(view);
+        options.transformView(view);
 
       let data = {
         r : view,
@@ -79,8 +113,86 @@ class Table extends Base {
 
       return state;
     });
+  }*/
+
+  static actionReload(path, options) {
+    return newAction(state => {
+      const view = state.getIn([ ...path, 'view' ]).asMutable();
+      
+      if( options && options.transformView && options.transformView.constructor === Function )
+        options.transformView(view);
+
+      const opts = {
+        method      : options && options.refresh ? 'PUT' : 'GET',
+        credentials : 'omit',
+        mode        : 'cors',
+        cache       : 'default'
+      };
+      
+      const onFetchError = error => {
+        if( options ) {
+          if( options.onDataError && options.onDataError.constructor === Function )
+            options.onDataError(error);
+          if( options.onDone && options.onDone.constructor === Function )
+            options.onDone(error);
+        }
+      };
+
+      const r = {
+        r : view,
+        m : 'dict',
+        f : 'list'
+      };
+    
+      if( opts.method === 'PUT' )
+        opts.body = JSON.stringify(r);
+
+      const url = BACKEND_URL + (opts.method === 'GET' ? '?' + serializeURIParams({r:r}) : '');
+
+      fetch(url, opts).then(response => {
+        const contentType = response.headers.get('content-type');
+
+        if( contentType ) {
+          if( contentType.includes('application/json') )
+            return response.json();
+          if( contentType.includes('text/') )
+            return response.text();
+        }
+        // will be caught below
+        throw new TypeError('Oops, we haven\'t right type of response! Status: ' + response.status + ', ' + response.statusText);
+      }).then(json => {
+        if( json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array) )
+          throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
+
+        const data = {
+          view : view,
+          numr : json.numeric,
+          rows : transformRows(json)
+        };
+
+        store.dispatch(Table.actionDataReady(path, data));
+
+        if( options ) {
+          if( options.onDataReady && options.onDataReady.constructor === Function )
+            options.onDataReady(data);
+          if( options.onDone && options.onDone.constructor === Function )
+            options.onDone(data);
+        }
+      })
+      .catch(error => {
+        console.log(error);
+        store.dispatch(Table.actionDataReady(path));
+        onFetchError(error);
+      });
+
+      return state;
+    });
   }
   
+  componentWillMount() {
+    store.dispatch(Table.actionReload(this.props.path));
+  }
+
   render() {
     console.log('render Table, isDefaultState: ' + this.props.isDefaultState);
     const props = this.props;
@@ -104,5 +216,6 @@ class Table extends Base {
       </Mui.Table>);
   }
 }
-
+//------------------------------------------------------------------------------
 export default Base.connect(Table);
+//------------------------------------------------------------------------------

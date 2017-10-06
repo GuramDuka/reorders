@@ -1,3 +1,4 @@
+//------------------------------------------------------------------------------
 export function copyObject(src, template) {
     let dst = src;
 
@@ -33,7 +34,7 @@ export function copyObject(src, template) {
     
     return dst;
 }
-
+//------------------------------------------------------------------------------
 // last argument is template, all rest them objects merge
 export function mergeObjectsProps() {
     const argc = arguments.length - 1;
@@ -55,7 +56,7 @@ export function mergeObjectsProps() {
 
     return dst;
 }
-
+//------------------------------------------------------------------------------
 // last argument is template, all rest them objects join
 export function joinObjectsProps() {
     const argc = arguments.length - 1;
@@ -80,3 +81,4 @@ export function joinObjectsProps() {
 
     return dst;
 }
+//------------------------------------------------------------------------------

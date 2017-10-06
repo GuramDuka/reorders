@@ -1,3 +1,4 @@
+//------------------------------------------------------------------------------
 import Immutable from 'seamless-immutable';
 import {
     // combineReducers,
@@ -5,14 +6,14 @@ import {
     //, applyMiddleware
 } from 'redux';
 //import thunk from 'redux-thunk';
-
+//------------------------------------------------------------------------------
 //let initialState = window.__INITIAL_STATE__;
 // Transform into Immutable.js collections,
 // but leave top level keys untouched for Redux
 //Object.keys(initialState).forEach(key => {
 //    initialState[key] = fromJS(initialState[key]);
 //});
-
+//------------------------------------------------------------------------------
 function reducer(state, action) {
     if( action.type.constructor === Function )
         return action.type(state);
@@ -28,9 +29,40 @@ function reducer(state, action) {
     // }
     // throw new Error('Unsupported action type');
 }
-
+//------------------------------------------------------------------------------
+const productsColumns = [
+    { name  : 'lineNo',       title : '#'       },
+    { name  : 'Код'                             },
+    { name  : 'Наименование'                    },
+    { name  : 'Артикул'                         },
+    { name  : 'Производитель'                   },
+    { name  : 'ОстатокОбщий', title : 'Остаток' }
+];
+//------------------------------------------------------------------------------
+const defaultState = new Immutable({
+    products    : {
+        table   : {
+            cols    : productsColumns,
+            view    :  {
+                type      : "Номенклатура",
+                parent    : '00000000-0000-0000-0000-000000000000',
+                groups    : true,
+                elements  : false,
+                filter    : 'Таблица.ЭтоГруппа ИЛИ Таблица.ОстатокОбщий <> 0',
+                cols      : [ ...productsColumns.slice(1).reduce((a, v) => { a.push(v.name); return a; }, []), ...[
+                    'НаименованиеПолное'                            ,
+                    'ДополнительноеОписаниеНоменклатуры'            ,
+                    'ДополнительноеОписаниеНоменклатурыВФорматеHTML',
+                ]]
+            }
+        }
+    }
+});
+//------------------------------------------------------------------------------
 const store = createStore(reducer
-    , new Immutable({})
+    , defaultState
     //, applyMiddleware(thunk.withExtraArgument({}))
 );//combineReducers(reducers));
+//------------------------------------------------------------------------------
 export default store;
+//------------------------------------------------------------------------------

@@ -1,4 +1,6 @@
+//------------------------------------------------------------------------------
 import React from 'react';
+import PropTypes from 'prop-types';
 import * as Mui from 'material-ui';
 import {
   Autorenew,
@@ -8,10 +10,17 @@ import {
 import store from '../../store';
 import Table from './Table';
 import Base, { newAction } from '../Base';
-
+//------------------------------------------------------------------------------
+const styles = theme => ({
+  colorPrimary: {
+    backgroundColor : theme.palette.primary[800],
+    color           : theme.palette.getContrastText(theme.palette.primary[800])
+  }
+});
+//------------------------------------------------------------------------------
 class Toolbar extends Base {
   static storedProps = {
-    isLoading   : false,
+    isLoading   : false
   };
   
   // static actionToggleIsLoading(path) {
@@ -38,8 +47,11 @@ class Toolbar extends Base {
   }
 
   static onClickToggleElementsVisibility(path, tablePath) {
-    store.dispatch(Table.actionReload(tablePath, { transformView : (view) =>
-      view.elements = !view.elements}));
+    Toolbar.switchIsLoading(path, true);
+    store.dispatch(Table.actionReload(tablePath, {
+      transformView : (view) => view.elements = !view.elements,
+      onDone        : () => Toolbar.switchIsLoading(path, false)
+    }));
   }
 
   static mapDispatchToProps(dispatch, ownProps) {
@@ -60,12 +72,15 @@ class Toolbar extends Base {
   render() {
     console.log('render Toolbar, isDefaultState: '
        + this.props.isDefaultState + ', isLoading: ' + this.props.isLoading);
+    // CircularProgress color may be only one of ["primary","accent"]
     const props = this.props;
+    const classes = props.classes;
+    const progress = props.isLoading && <Mui.CircularProgress className={classes.colorPrimary} size={20} />;
     return (
       <Mui.Toolbar>
         <Mui.Typography type="title" color="inherit">
-            {'Справочник '}
-        </Mui.Typography>{props.isLoading && <Mui.CircularProgress size={20} />}{props.isLoading ||
+            {props.type}
+        </Mui.Typography>{progress}{props.isLoading ||
         <Mui.IconButton aria-label="Reload" color="inherit" onClick={props.onClickReload}>
           <Autorenew />
         </Mui.IconButton>}{props.isLoading ||
@@ -78,5 +93,10 @@ class Toolbar extends Base {
       </Mui.Toolbar>);
   }
 }
-
-export default Base.connect(Toolbar);
+//------------------------------------------------------------------------------
+Toolbar.propTypes = {
+  classes: PropTypes.object.isRequired
+};
+//------------------------------------------------------------------------------
+export default Base.connect(Mui.withStyles(styles)(Toolbar));
+//------------------------------------------------------------------------------
