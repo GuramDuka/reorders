@@ -1,4 +1,21 @@
 //------------------------------------------------------------------------------
+// node_modules\react-scripts\config\webpack.config.prod.js
+// new SWPrecacheWebpackPlugin({
+// runtimeCaching: [{
+//     urlPattern: /^(.*)$/,
+//     handler: 'networkFirst'
+//   }, {
+//   urlPattern: /\/articles\//,
+//   handler: 'fastest',
+//   options: {
+//     cache: {
+//       maxEntries: 10,
+//       name: 'articles-cache'
+//     }
+//   }
+// }],
+// verbose: true
+//------------------------------------------------------------------------------
 // nginx proxy configuration
 // location ~ ^/reorders/api/backend {
 //     rewrite ^/reorders/api/backend(.*)$ /opt-ws/hs/react$1$is_args$args break;
@@ -10,6 +27,7 @@
 //     proxy_set_header Upgrade $http_upgrade;
 //     proxy_set_header Connection "upgrade";
 //     proxy_cache_bypass $http_upgrade;
+//     add_header 'Service-Worker-Allowed' '/';
 // }
     
 // location ~ ^/reorders {
@@ -22,6 +40,7 @@
 //     proxy_set_header Upgrade $http_upgrade;
 //     proxy_set_header Connection "upgrade";
 //     proxy_cache_bypass $http_upgrade;
+//     add_header 'Service-Worker-Allowed' '/';
 // }
 //------------------------------------------------------------------------------
 // see proxy config in package.json

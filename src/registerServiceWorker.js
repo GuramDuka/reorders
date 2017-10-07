@@ -19,23 +19,24 @@ const isLocalhost = Boolean(
 );
 
 export default function register() {
-  console.log('window.location.origin: ' + window.location.origin);
   console.log('process.env.NODE_ENV: ' + (process && process.env.NODE_ENV));
   console.log('process.env.PUBLIC_URL: ' + (process && process.env.PUBLIC_URL));
+  console.log('window.location.origin: ' + window.location.origin);
   if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.
-    const publicUrl = new URL(process.env.PUBLIC_URL, window.location);
+    /*const publicUrl = new URL(process.env.PUBLIC_URL, window.location);
+    console.log('publicUrl: ' + publicUrl);
     if (publicUrl.origin !== window.location.origin) {
       // Our service worker won't work if PUBLIC_URL is on a different origin
       // from what our page is served on. This might happen if a CDN is used to
       // serve assets; see https://github.com/facebookincubator/create-react-app/issues/2374
       return;
-    }
+    }*/
 
     window.addEventListener('load', () => {
       const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
 
-      if (!isLocalhost) {
+      if (!isLocalhost) { 
         // Is not local host. Just register service worker
         registerValidSW(swUrl);
       } else {
@@ -48,19 +49,22 @@ export default function register() {
 
 function registerValidSW(swUrl) {
   navigator.serviceWorker
-    .register(swUrl)
+    .register(swUrl, { scope : '/' })
     .then(registration => {
+      console.log(registration);
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
         installingWorker.onstatechange = () => {
           if (installingWorker.state === 'installed') {
+            console.log('Service worker installed');
             if (navigator.serviceWorker.controller) {
               // At this point, the old content will have been purged and
               // the fresh content will have been added to the cache.
               // It's the perfect time to display a "New content is
               // available; please refresh." message in your web app.
               console.log('New content is available; please refresh.');
-            } else {
+            }
+            else {
               // At this point, everything has been precached.
               // It's the perfect time to display a
               // "Content is cached for offline use." message.
