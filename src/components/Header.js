@@ -1,88 +1,120 @@
 //------------------------------------------------------------------------------
-import React from 'react';
-import PropTypes from 'prop-types';
-import * as Mui from 'material-ui';
-import Card, {
-  CardMedia
-} from 'material-ui/Card';
-import MenuIcon from 'material-ui-icons/Menu';
-//import RefreshIndicator from 'material-ui/RefreshIndicator';
-import brand_logo from '../assets/logo.jpg';
-import Base from './Base';
-import DictListToolbar from './DictList/Toolbar';
+import React, { Component } from 'react';
+import connect from 'react-redux-connect';
+import * as Sui from 'semantic-ui-react';
+import store from '../store';
+import { newAction } from './Base';
 //------------------------------------------------------------------------------
-const styles = theme => ({
-  root: {
-    marginTop: theme.spacing.unit * 3,
-    width: '100%',
-  },
-  flex: {
-    flex: 4,
-  },
-  menuButton: {
-    marginLeft: -12,
-    marginRight: 20,
-  },
-  container: {
-    position: 'relative',
-  },
-  refresh: {
-    display: 'inline-block',
-    position: 'relative',
-  },
-  card: {
-    width: 120,
-  },
-  media: {
-    width: 'auto',
-    height: 48,
-  },
-});
-//------------------------------------------------------------------------------
-class Header extends Base {
+class Header extends Component {
+  static mapStateToProps(state, ownProps) {
+    return state.getIn(ownProps.path);
+  }
+
+  static mapDispatchToProps(dispatch, ownProps) {
+    const { path } = ownProps;
+    return {
+      toggleNavbar  : e => {
+        const collapsedName = 'collapsed';
+        const collapsedPath = [ ...path, collapsedName ];
+        store.dispatch(newAction(state => state.getIn(collapsedPath)
+          ? state.updateIn(path, v => v.without(collapsedName))
+          : state.setIn(collapsedPath, true)));
+      },
+      changeProductsGroup: e => {
+        const level = +e.target.attributes.level.value;
+        store.dispatch(newAction(state => {
+          return state.updateIn([...path, 'productsTreePath']).without((v, k) => k > level);
+        }))
+      },
+      changeCustomersGroup: e => {
+        console.log(e);
+        store.dispatch(newAction(state => {
+          state.getIn([...path, 'customersTreePath'])
+          return state;
+        }))
+      }
+    };
+  }
+
   render() {
-    console.log('render Header');
-    /*              <RefreshIndicator
-                size={40}
-                left={10}
-                top={0}
-                status="loading"
-                style={styles.refresh}
-              />
-*/
-    const classes = this.props.classes;
     return (
-      <div style={{ paddingTop: 64 }}>
-        <Mui.AppBar title="Шинторг" position="fixed" style={{ height: 64 }}>
-          <Mui.Toolbar>
-            <Mui.IconButton color="inherit" aria-label="Menu">
-              <MenuIcon />
-            </Mui.IconButton>
-            <Card className={classes.card}>
-              <CardMedia
-                className={classes.media}
-                image={brand_logo}
-              />
-            </Card>
-            <Mui.Typography type="title" color="inherit">
-                Шинторг
-            </Mui.Typography>
-            <DictListToolbar type="Номенклатура" path={['products', 'toolbar']} tablePath={['products', 'table']} />
-            <Mui.Button color="contrast">Login</Mui.Button>
-          </Mui.Toolbar>
-        </Mui.AppBar>
-      </div>
-    );    
+      <Sui.Menu fixed='top'>
+      <Sui.Dropdown item icon='wrench' simple>
+        <Sui.Dropdown.Menu>
+          <Sui.Dropdown.Item>
+            <Sui.Icon name='dropdown' />
+            <span className='text'>New</span>
+            <Sui.Dropdown.Menu>
+              <Sui.Dropdown.Item>Document</Sui.Dropdown.Item>
+              <Sui.Dropdown.Item>Image</Sui.Dropdown.Item>
+            </Sui.Dropdown.Menu>
+          </Sui.Dropdown.Item>
+          <Sui.Dropdown.Item>Open</Sui.Dropdown.Item>
+          <Sui.Dropdown.Item>Save...</Sui.Dropdown.Item>
+          <Sui.Dropdown.Item>Edit Permissions</Sui.Dropdown.Item>
+          <Sui.Dropdown.Divider />
+          <Sui.Dropdown.Header>Export</Sui.Dropdown.Header>
+          <Sui.Dropdown.Item>Share</Sui.Dropdown.Item>
+        </Sui.Dropdown.Menu>
+      </Sui.Dropdown>
+
+      <Sui.Dropdown item text='Каталог'>
+        <Sui.Dropdown.Menu> 
+          <Sui.Dropdown.Item>Шины</Sui.Dropdown.Item>
+          <Sui.Dropdown.Item>Диски</Sui.Dropdown.Item>
+          <Sui.Dropdown.Item>АКБ</Sui.Dropdown.Item>
+          <Sui.Dropdown.Divider />
+          <Sui.Dropdown.Item>Масла</Sui.Dropdown.Item>
+          <Sui.Dropdown.Item>Масла2</Sui.Dropdown.Item>
+        </Sui.Dropdown.Menu>
+      </Sui.Dropdown>
+
+      <Sui.Menu.Menu position='right'>
+        <div className='ui right aligned category search item'>
+          <div className='ui transparent icon input'>
+            <input className='prompt' type='text' placeholder='Search...' />
+            <i className='search link icon' />
+          </div>
+          <div className='results'></div>
+        </div>
+      </Sui.Menu.Menu>
+    </Sui.Menu>
+    
+      /*<Bui.Navbar id={[...props.path, 'navbar'].join('/')} className="fixed-top p-1 bg-white"
+        color="faded" light
+        style={{justifyContent: 'start'}}>
+        <Bui.NavbarToggler onClick={props.toggleNavbar} />
+        <Bui.NavbarBrand href="#" className="ml-1">Шинторг</Bui.NavbarBrand>
+        <Bui.Input type="text" placeholder="Поиск..." style={{maxWidth:'45%'}} />
+        <Bui.Collapse isOpen={!props.collapsed} navbar>
+          <Bui.Nav navbar>
+            <Bui.NavItem>
+              <Bui.Breadcrumb>{props.productsTreePath.map((v, k, a) =>
+                <Bui.BreadcrumbItem
+                  active={k + 1 !== a.length}
+                  tag={k + 1 === a.length ? 'span' : 'a'}
+                  href="#" level={k} onClick={props.changeProductsGroup}
+                  key={v.key}>
+                  {v.name}
+                </Bui.BreadcrumbItem>)}
+              </Bui.Breadcrumb>
+            </Bui.NavItem>
+            <Bui.NavItem>
+              <Bui.Breadcrumb>{props.customersTreePath.map((v, k, a) =>
+                <Bui.BreadcrumbItem
+                  active={k + 1 !== a.length}
+                  tag={k + 1 === a.length ? 'span' : 'a'}
+                  href="#" level={k} onClick={props.changeCustomersGroup}
+                  key={v.key}>
+                  {v.name}
+                </Bui.BreadcrumbItem>)}
+              </Bui.Breadcrumb>
+            </Bui.NavItem>
+          </Bui.Nav>
+        </Bui.Collapse>
+        </Bui.Navbar>*/);
   }
 }
 //------------------------------------------------------------------------------
-// Header.contextTypes = {
-//   store: PropTypes.object.isRequired
-// };
-//------------------------------------------------------------------------------
-Header.propTypes = {
-  classes: PropTypes.object.isRequired
-};
-//------------------------------------------------------------------------------
-export default Base.connect(Mui.withStyles(styles)(Header));
+export default connect(Header);
 //------------------------------------------------------------------------------

@@ -30,8 +30,8 @@ function reducer(state, action) {
     // throw new Error('Unsupported action type');
 }
 //------------------------------------------------------------------------------
-const productsColumns = [
-    { name  : 'lineNo',       title : '#'       },
+const productsVisibleFields = [
+    //{ name  : 'lineNo',       title : '#'       },
     { name  : 'Код'                             },
     { name  : 'Наименование'                    },
     { name  : 'Артикул'                         },
@@ -40,19 +40,32 @@ const productsColumns = [
 ];
 //------------------------------------------------------------------------------
 const defaultState = new Immutable({
+    header      : {
+        collapsed           : true,
+        productsTreePath    : [{ key : '00000000-0000-0000-0000-000000000000', name : 'Каталог' }],
+        customersTreePath   : [{ key : '00000000-0000-0000-0000-000000000000', name : 'Контрагенты' }]
+    },
     products    : {
-        table   : {
-            cols    : productsColumns,
-            view    :  {
+        list   : {
+            fields       : productsVisibleFields,
+            keyField     : 'Ссылка',
+            headerField  : 'Наименование',
+            titleField   : 'НаименованиеПолное',
+            imgField     : 'ОсновноеИзображение',
+            isGroupField : 'ЭтоГруппа',
+            rows         : [],
+            grps         : [],
+            view      :  {
                 type      : "Номенклатура",
                 parent    : '00000000-0000-0000-0000-000000000000',
                 groups    : true,
-                elements  : false,
+                elements  : true,
                 filter    : 'Таблица.ЭтоГруппа ИЛИ Таблица.ОстатокОбщий <> 0',
-                cols      : [ ...productsColumns.slice(1).reduce((a, v) => { a.push(v.name); return a; }, []), ...[
+                fields    : [ ...productsVisibleFields.slice(0).reduce((a, v) => { a.push(v.name); return a; }, []), ...[
+                    'ОсновноеИзображение'                           ,
                     'НаименованиеПолное'                            ,
                     'ДополнительноеОписаниеНоменклатуры'            ,
-                    'ДополнительноеОписаниеНоменклатурыВФорматеHTML',
+                    'ДополнительноеОписаниеНоменклатурыВФорматеHTML'
                 ]]
             }
         }

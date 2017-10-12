@@ -8,7 +8,6 @@ import {
   ViewList
 } from 'material-ui-icons';
 import store from '../../store';
-import Table from './Table';
 import Base, { newAction } from '../Base';
 //------------------------------------------------------------------------------
 const styles = theme => ({
@@ -41,17 +40,17 @@ class Toolbar extends Base {
 
   static onClickReload(path, tablePath, options) {
     Toolbar.switchIsLoading(path, true);
-    store.dispatch(Table.actionReload(tablePath, { ...options,
-      onDone : () => Toolbar.switchIsLoading(path, false)
-    }));
+    // store.dispatch(Table.actionReload(tablePath, { ...options,
+    //   onDone : () => Toolbar.switchIsLoading(path, false)
+    // }));
   }
 
   static onClickToggleElementsVisibility(path, tablePath) {
     Toolbar.switchIsLoading(path, true);
-    store.dispatch(Table.actionReload(tablePath, {
-      transformView : (view) => view.elements = !view.elements,
-      onDone        : () => Toolbar.switchIsLoading(path, false)
-    }));
+    // store.dispatch(Table.actionReload(tablePath, {
+    //   transformView : (view) => view.elements = !view.elements,
+    //   onDone        : () => Toolbar.switchIsLoading(path, false)
+    // }));
   }
 
   static mapDispatchToProps(dispatch, ownProps) {

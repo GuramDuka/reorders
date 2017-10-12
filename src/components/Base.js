@@ -4,7 +4,7 @@ import connect from 'react-redux-connect';
 //import PropTypes from 'prop-types';
 //import Immutable from 'seamless-immutable';
 //import store from '../store';
-import * as Util from '../util';
+//import * as Util from '../util';
 //------------------------------------------------------------------------------
 function encode(val) {
   return encodeURIComponent(val)
@@ -47,6 +47,12 @@ export function serializeURIParams(params) {
   return parts;
 }
 //------------------------------------------------------------------------------
+export function toggleBoolean(state, path, vname) {
+  const vpath = [...path, vname];
+  return state.getIn(vpath, false) ?
+    state.updateIn(path, v => v.without(vname)) : state.setIn(vpath, true);
+}
+//------------------------------------------------------------------------------
 export function newAction(functor) {
   return { type : functor };
 }
@@ -68,12 +74,11 @@ class Base extends Component {
   // }
 
   static mapStateToProps(state, ownProps) {
-    const proto = this;
-    const curState = state.getIn(ownProps.path);
-    let props = Util.mergeObjectsProps(curState, ownProps, proto.storedProps);
-    // if( !curState )
-    //   props.isDefaultState = true;
-    return props;
+    return state.getIn(ownProps.path);
+    // const proto = this;
+    // const curState = state.getIn(ownProps.path);
+    // let props = Util.mergeObjectsProps(curState, ownProps, proto.storedProps);
+    // return props;
   }
 
   // static actionStoreState(props) {
