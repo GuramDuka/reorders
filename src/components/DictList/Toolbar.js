@@ -7,8 +7,7 @@ import {
   Refresh,
   ViewList
 } from 'material-ui-icons';
-import store from '../../store';
-import Base, { newAction } from '../Base';
+import disp from '../../store';
 //------------------------------------------------------------------------------
 const styles = theme => ({
   colorPrimary: {
@@ -17,7 +16,7 @@ const styles = theme => ({
   }
 });
 //------------------------------------------------------------------------------
-class Toolbar extends Base {
+class Toolbar extends Component {
   static storedProps = {
     isLoading   : false
   };
@@ -29,25 +28,25 @@ class Toolbar extends Base {
   // };
 
   static actionSetIsLoading(path, isLoading) {
-    return newAction(state => isLoading
+    return state => isLoading
       ? state.setIn([ ...path, 'isLoading' ], true)
-      : state.updateIn(path, v => v.without('isLoading')));
+      : state.updateIn(path, v => v.without('isLoading'));
   };
 
   static switchIsLoading(path, isLoading) {
-    store.dispatch(Toolbar.actionSetIsLoading(path, isLoading));
+    disp(Toolbar.actionSetIsLoading(path, isLoading));
   }
 
   static onClickReload(path, tablePath, options) {
     Toolbar.switchIsLoading(path, true);
-    // store.dispatch(Table.actionReload(tablePath, { ...options,
+    // disp(Table.actionReload(tablePath, { ...options,
     //   onDone : () => Toolbar.switchIsLoading(path, false)
     // }));
   }
 
   static onClickToggleElementsVisibility(path, tablePath) {
     Toolbar.switchIsLoading(path, true);
-    // store.dispatch(Table.actionReload(tablePath, {
+    // disp(Table.actionReload(tablePath, {
     //   transformView : (view) => view.elements = !view.elements,
     //   onDone        : () => Toolbar.switchIsLoading(path, false)
     // }));
@@ -69,8 +68,10 @@ class Toolbar extends Base {
   }
   
   render() {
-    console.log('render Toolbar, isDefaultState: '
-       + this.props.isDefaultState + ', isLoading: ' + this.props.isLoading);
+    if( process.env.NODE_ENV === 'development' )
+      console.log('render Toolbar, isDefaultState: '
+        + this.props.isDefaultState + ', isLoading: ' + this.props.isLoading);
+
     // CircularProgress color may be only one of ["primary","accent"]
     const props = this.props;
     const classes = props.classes;

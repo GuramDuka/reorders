@@ -7,7 +7,7 @@ import 'semantic-ui-css/semantic.css';
 import './css/index.css';
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
-import store from './store';
+import { store } from './store';
 
 ReactDOM.render(
     (<Provider store={store}>

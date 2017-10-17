@@ -19,7 +19,6 @@ const isLocalhost = Boolean(
 );
 
 export default function register() {
-  console.log('process.env.NODE_ENV: ' + (process && process.env.NODE_ENV));
   console.log('process.env.PUBLIC_URL: ' + (process && process.env.PUBLIC_URL));
   console.log('window.location.origin: ' + window.location.origin);
   if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {

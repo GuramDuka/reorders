@@ -7,6 +7,8 @@ import './css/App.css';
 import Header from './components/Header';
 import DictListView from './components/DictList/List';
 //------------------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
 class App extends Component {
   // constructor(props, context) {
   //   super(props, context);
@@ -36,7 +38,8 @@ class App extends Component {
   // }
   
   render() {
-    console.log('render App');
+    if( process.env.NODE_ENV === 'development' )
+      console.log('render App');
     return (
       <div>
         <Header path={['header']} />
@@ -49,7 +52,7 @@ class App extends Component {
           <Sui.Container textAlign='center'>
             <Sui.Divider inverted section />
             <Sui.Image centered size='mini' src={semanticLogo} style={{marginBottom: '1em'}} />
-            <Sui.List vertical divided link>
+            <Sui.List divided link>
               <Sui.List.Item as='a' href='#'>Contact Us</Sui.List.Item>
               <Sui.List.Item as='a' href='#'>Terms and Conditions</Sui.List.Item>
               <Sui.List.Item as='a' href='#'>Privacy Policy</Sui.List.Item>

@@ -53,9 +53,7 @@ export function toggleBoolean(state, path, vname) {
     state.updateIn(path, v => v.without(vname)) : state.setIn(vpath, true);
 }
 //------------------------------------------------------------------------------
-export function newAction(functor) {
-  return { type : functor };
-}
+////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
 class Base extends Component {
   // componentWillMount() {

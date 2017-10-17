@@ -2,16 +2,20 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
-import store from '../../store';
+import disp, { copy } from '../../store';
 import BACKEND_URL from '../../backend';
-import { serializeURIParams, toggleBoolean, newAction } from '../Base';
+import { serializeURIParams } from '../Base';
+import Groups from './Groups';
 import Card from './Card';
 //------------------------------------------------------------------------------
-function transform(data) {
+function transform(data, view) {
   const { cols, dict, text, boolean } = data;
-  for( const rows of [ data.rows, data.grps ] ) {
-    for( let i = rows.length - 1; i >= 0; i-- ) {
-      const row = rows[i];
+  for( const k of [ 'rows', 'grps' ] ) {
+    const recs = data[k];
+    const rmap = {};
+
+    for( let i = recs.length - 1; i >= 0; i-- ) {
+      const row = recs[i];
       const now = { /*lineNo : i + 1*/ };
 
       for( let j = cols.length - 1; j >= 0; j-- ) {
@@ -23,35 +27,34 @@ function transform(data) {
         }
       }
 
-      rows[i] = now;
+      recs[i] = now;
+      rmap[now[view.keyField]] = now;
+      data[k + 'Map'] = rmap;
     }
   }
 
   return data;
 }
 //------------------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
 class List extends Component {
   static mapStateToProps(state, ownProps) {
-    return state.getIn(ownProps.path);
-  }
-
-  static mapDispatchToProps(dispatch, ownProps) {
-    const { path } = ownProps;
-    return {
-      toggleGroups : e => store.dispatch(newAction(state => toggleBoolean(state, path, 'expandedGroups')))
-    };      
+    return state.mapIn(ownProps.path);
   }
 
   static actionDataReady(path, data) {
-    return newAction(state => state.setIn(path, state.getIn(path).merge(data)));
+    return state => state.mergeIn(path, data);
   };
 
   static actionReload(path, options) {
-    return newAction(state => {
-      const view = state.getIn([ ...path, 'view' ]).asMutable();
+    return state => {
+      let view = state.getIn(path, 'view');
       
-      if( options && options.transformView && options.transformView.constructor === Function )
+      if( options && options.transformView && options.transformView.constructor === Function ) {
+        view = copy(view);
         options.transformView(view);
+      }
 
       const opts = {
         method      : options && options.refresh ? 'PUT' : 'GET',
@@ -60,15 +63,6 @@ class List extends Component {
         cache       : 'default'
       };
       
-      const onFetchError = error => {
-        if( options ) {
-          if( options.onDataError && options.onDataError.constructor === Function )
-            options.onDataError(error);
-          if( options.onDone && options.onDone.constructor === Function )
-            options.onDone(error);
-        }
-      };
-
       const r = {
         r : view,
         m : 'dict',
@@ -95,7 +89,7 @@ class List extends Component {
         if( json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array) )
           throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
 
-        json = transform(json);
+        json = transform(json, view);
 
         const data = {
           view       : view,
@@ -104,55 +98,63 @@ class List extends Component {
           grps       : json.grps
         };
 
-        store.dispatch(List.actionDataReady(path, data));
+        disp(state => {
+          state = List.actionDataReady(path, data)(state);
 
-        if( options ) {
-          if( options.onDataReady && options.onDataReady.constructor === Function )
-            options.onDataReady(data);
-          if( options.onDone && options.onDone.constructor === Function )
-            options.onDone(data);
-        }
+          if( options ) {
+            if( options.onDataReady && options.onDataReady.constructor === Function )
+              state = options.onDataReady(state);
+            if( options.onDone && options.onDone.constructor === Function )
+              state = options.onDone(state);
+          }
+
+          return state;
+        });
       })
       .catch(error => {
-        console.log(error);
-        store.dispatch(List.actionDataReady(path));
-        onFetchError(error);
+        if( process.env.NODE_ENV === 'development' )
+          console.log(error);
+
+        disp(state => {
+          if( options ) {
+            if( options.onError && options.onError.constructor === Function )
+              state = options.onError(state);
+            if( options.onDone && options.onDone.constructor === Function )
+              state = options.onDone(state);
+          }
+          return state;
+        });
       });
 
       return state;
-    });
+    };
   }
   
   componentWillMount() {
-    store.dispatch(List.actionReload(this.props.path));
+    disp(List.actionReload(this.props.path));
   }
 
   render() {
-    console.log('render List');
-    const { props } = this;
-    const { expandedGroups, toggleGroups, keyField, headerField, imgField, titleField } = props;
+    if( process.env.NODE_ENV === 'development' )
+      console.log('render List');
 
-    const grps = expandedGroups ? props.grps.map(grp =>
-      <Sui.Button basic>
-        {grp[headerField]}
-      </Sui.Button>) : null;
+    const { props } = this;
+    const { path, view, rows, grps, keyField, headerField, imgField, titleField } = props;
 
     return (
     <Sui.Segment vertical style={{padding: 0}}>
+      <Groups
+        path={[...path, 'groups', view.parent]}
+        listPath={path}
+        parent={view.parent}
+        keyField={keyField}
+        headerField={headerField}
+        data={grps} />
       <Sui.Segment style={{padding: 0, margin: 0}}>
-        <Sui.Button compact primary size="mini">
-          <Sui.Icon name='backward' />
-        </Sui.Button>
-        <Sui.Button compact size="mini" circular
-          onClick={toggleGroups}
-          icon={expandedGroups ? 'compress' : 'expand'} />
-        {grps}
-      </Sui.Segment>
-      <Sui.Segment style={{padding: 0, margin: 0}}>
-        {props.rows.map((row) =>
+        {rows.map((row) =>
           <Card
             key={row[keyField]}
-            path={['products', 'cards', row[keyField]]}
+            path={[...path, 'cards', row[keyField]]}
             data={row}
             keyField={keyField}
             headerField={headerField}

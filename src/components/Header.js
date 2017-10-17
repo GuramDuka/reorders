@@ -2,12 +2,13 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
-import store from '../store';
-import { newAction } from './Base';
+import disp from '../store';
+//------------------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
 class Header extends Component {
   static mapStateToProps(state, ownProps) {
-    return state.getIn(ownProps.path);
+    return state.mapIn(ownProps.path);
   }
 
   static mapDispatchToProps(dispatch, ownProps) {
@@ -16,22 +17,21 @@ class Header extends Component {
       toggleNavbar  : e => {
         const collapsedName = 'collapsed';
         const collapsedPath = [ ...path, collapsedName ];
-        store.dispatch(newAction(state => state.getIn(collapsedPath)
+        disp(state => state.getIn(collapsedPath)
           ? state.updateIn(path, v => v.without(collapsedName))
-          : state.setIn(collapsedPath, true)));
+          : state.setIn(collapsedPath, true));
       },
       changeProductsGroup: e => {
         const level = +e.target.attributes.level.value;
-        store.dispatch(newAction(state => {
+        disp(state => {
           return state.updateIn([...path, 'productsTreePath']).without((v, k) => k > level);
-        }))
+        })
       },
       changeCustomersGroup: e => {
-        console.log(e);
-        store.dispatch(newAction(state => {
+        disp(state => {
           state.getIn([...path, 'customersTreePath'])
           return state;
-        }))
+        })
       }
     };
   }
