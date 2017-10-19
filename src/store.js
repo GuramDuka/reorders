@@ -182,7 +182,7 @@ function sscat() {
 }
 //------------------------------------------------------------------------------
 const defaultState = {
-    metadataVersion : 1,
+    metadataVersion : 3,
     header      : {
         collapsed           : true,
         productsTreePath    : [{ key : nullLink, name : 'Каталог' }],
@@ -192,7 +192,8 @@ const defaultState = {
         list   : {
             fields       : productsVisibleFields,
             keyField     : 'Ссылка',
-            headerField  : r => sscat(r.ЭтоГруппа ? null : '[' + r.Код + ']', r.Наименование, r.Артикул, r.Производитель),
+            getHeaderField  : r => sscat(r.ЭтоГруппа ? null : '[' + r.Код + ']', r.Наименование, r.Артикул, r.Производитель),
+            headerField  : 'Наименование',
             titleField   : 'НаименованиеПолное',
             remainderField: 'ОстатокОбщий',
             reserveField : 'Резерв',

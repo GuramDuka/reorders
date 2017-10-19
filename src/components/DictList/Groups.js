@@ -48,14 +48,15 @@ class Groups extends Component {
       console.log('render Groups');
 
     const { props } = this;
-    const { parent, isLoading, expanded, toggleGroups, switchGroup, clickBackward, keyField, headerField, data } = props;
+    const { parent, isLoading, expanded, toggleGroups, switchGroup, clickBackward,
+      keyField, getHeaderField, data } = props;
     const list = expanded ? data.map(grp =>
       <Sui.Button style={{marginBottom:1}}
         size="tiny" basic
         key={grp[keyField]}
         link={grp[keyField]}
         onClick={switchGroup}>
-        {headerField(grp)}
+        {getHeaderField(grp)}
       </Sui.Button>) : null;
 
     const backward = parent === nullLink ? null :

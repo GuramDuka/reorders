@@ -22,7 +22,8 @@ class Card extends Component {
 
   render() {
     const { props } = this;
-    const { expanded, toggleCard, data, headerField, imgField, titleField, remainderField, reserveField, priceField, descField } = props;
+    const { expanded, toggleCard, data, getHeaderField, headerField,
+      imgField, titleField, remainderField, reserveField, priceField, descField } = props;
 
     if( process.env.NODE_ENV === 'development' )
       console.log('render Card: ' + props.path[props.path.length - 1]);
@@ -53,7 +54,7 @@ class Card extends Component {
         <Sui.Card.Content style={{padding: '.25em'}}>
           {expanded ? img : null}
           <Sui.Card.Header style={{fontSize: '87%'}}>
-            {headerField(data)}{expanded ? null :
+            {expanded ? data[titleField].trim().length === 0 ? data[headerField] : data[titleField] : getHeaderField(data)}{expanded ? null :
             <Sui.Label size="small" color="teal" image>
               {ico}
               {data[remainderField]}{data[reserveField] ? ' (' + data[reserveField] + ')' : ''}
@@ -63,13 +64,22 @@ class Card extends Component {
               onClick={toggleCard}
               icon={expanded ? 'compress' : 'expand'}
             />
-          </Sui.Card.Header>{expanded && data[remainderField] ?
+          </Sui.Card.Header>
+          <Sui.Card.Meta>
+            {'Код: ' + data.Код}
+          </Sui.Card.Meta>{expanded && data.Артикул ?
+          <Sui.Card.Meta>
+            {'Артикул: ' + data.Артикул}
+          </Sui.Card.Meta> : null}{expanded && data.Производитель ?
+          <Sui.Card.Meta>
+            {'Производитель: ' + data.Производитель}
+          </Sui.Card.Meta> : null}{expanded && data[remainderField] ?
           <Sui.Card.Meta>
             {'Остаток: ' + data[remainderField]}
           </Sui.Card.Meta> : null}{expanded && data[priceField] ?
           <Sui.Card.Meta>
             {'Цена: ' + data[priceField] + '₽'}
-          </Sui.Card.Meta> : null}{expanded && data[titleField] !== data[headerField] ?
+          </Sui.Card.Meta> : null}{expanded ?
             <Sui.Container fluid textAlign='justified'>
               {desc}
             </Sui.Container>

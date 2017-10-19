@@ -142,7 +142,7 @@ class List extends Component {
 
     const { props } = this;
     const { path, view, rows, grps, isLoading,
-      keyField, headerField, imgField,
+      keyField, getHeaderField, headerField, imgField,
       titleField, remainderField, reserveField, priceField, descField } = props;
 
     return (
@@ -152,6 +152,7 @@ class List extends Component {
         listPath={path}
         parent={view.parent}
         keyField={keyField}
+        getHeaderField={getHeaderField}
         headerField={headerField}
         data={grps} />
       <Sui.Segment loading={isLoading} style={{padding: 0, margin: 0}}>
@@ -161,6 +162,7 @@ class List extends Component {
             path={[...path, 'cards', row[keyField]]}
             data={row}
             keyField={keyField}
+            getHeaderField={getHeaderField}
             headerField={headerField}
             titleField={titleField}
             remainderField={remainderField}
