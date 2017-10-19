@@ -22,43 +22,58 @@ class Card extends Component {
 
   render() {
     const { props } = this;
-    const { expanded, toggleCard, data, headerField, imgField, titleField } = props;
+    const { expanded, toggleCard, data, headerField, imgField, titleField, remainderField, reserveField, priceField, descField } = props;
 
     if( process.env.NODE_ENV === 'development' )
       console.log('render Card: ' + props.path[props.path.length - 1]);
     
     const icoKey = data[imgField];
+    
     const icoUrl = BACKEND_URL + '?'
-      + serializeURIParams({r: {m: 'img', f: 'ico', u: icoKey, w: 32, h: 32}});
+      + serializeURIParams({r: {m: 'img', f: 'ico', u: icoKey, w: 28, h: 28}});
+    const ico = icoKey === nullLink ? null :
+      <Sui.Image size="mini" src={icoUrl} style={{padding:2}} />;
+
     const imgUrl = BACKEND_URL + '?'
       + serializeURIParams({r: {m: 'img', u: icoKey}});
     const img = icoKey === nullLink ? null :
       <Sui.Image floated="left" size="tiny" src={imgUrl} />;
 
+    const desc = data[descField]
+      //.replace(/\\r\\n/g, '<br />')
+      //.replace(/\\r/g, '<br />')
+      //.replace(/\\n/g, '<br />')
+      //.replace(/\\t/g, '&nbsp;')
+      //.replace(//g, '&bull;') // https://unicode-table.com/en/F020/
+      .replace(//g, '•')
+    ;
+
     return (
       <Sui.Card fluid style={{marginLeft: 0, marginRight: 0, marginTop: 0, marginBottom: 0}}>
         <Sui.Card.Content style={{padding: '.25em'}}>
-          {img}
+          {expanded ? img : null}
           <Sui.Card.Header style={{fontSize: '87%'}}>
-            {data[headerField]}{expanded ? null :
+            {headerField(data)}{expanded ? null :
             <Sui.Label size="small" color="teal" image>
-              <Sui.Image size="mini" src={icoUrl} style={{padding:2}} />
-              {data.ОстатокОбщий}
-              <Sui.Label.Detail>24.99₽</Sui.Label.Detail>
+              {ico}
+              {data[remainderField]}{data[reserveField] ? ' (' + data[reserveField] + ')' : ''}
+              <Sui.Label.Detail>{data[priceField]}₽</Sui.Label.Detail>
             </Sui.Label>}
             <Sui.Button floated="right" compact size="mini" circular primary
               onClick={toggleCard}
               icon={expanded ? 'compress' : 'expand'}
             />
-          </Sui.Card.Header>
-          {expanded && data.ОстатокОбщий ?
+          </Sui.Card.Header>{expanded && data[remainderField] ?
           <Sui.Card.Meta>
-            {'Остаток: ' + data.ОстатокОбщий}
-            {'Цена: 24.99₽'}
+            {'Остаток: ' + data[remainderField]}
+          </Sui.Card.Meta> : null}{expanded && data[priceField] ?
+          <Sui.Card.Meta>
+            {'Цена: ' + data[priceField] + '₽'}
           </Sui.Card.Meta> : null}{expanded && data[titleField] !== data[headerField] ?
-          <Sui.Card.Description>
-            {data[titleField]}
-          </Sui.Card.Description> : null}
+            <Sui.Container fluid textAlign='justified'>
+              {desc}
+            </Sui.Container>
+           : null}
         </Sui.Card.Content>{expanded ?
         <Sui.Card.Content extra>
         </Sui.Card.Content> : null}

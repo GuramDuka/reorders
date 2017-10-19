@@ -11,6 +11,7 @@
     -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
     <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
+    <link rel="stylesheet" href="%PUBLIC_URL%/loader.css">
     <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
@@ -26,19 +27,43 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Reorders</title>
   </head>
-  <body id="body">
+  <body class="dimmed dimmable">
+    <div id="loading-dimmer" class="ui active page dimmer">
+      <div class="content">
+        <div class="center">
+          <div class="ui large text loader">
+            <div class="ui inverted teal header">
+              Loading ...
+              <div class="sub header">Reorders</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>(function() {
+      var delay = 500;
+      var dimmer = document.querySelector('#loading-dimmer');
+      dimmer.style.pointerEvents = 'none';
+      dimmer.style.transition = 'opacity ' + delay + 'ms linear';
+
+      function removeDimmer() {
+        dimmer.style.opacity = '0';
+
+        setTimeout(function() {
+          document.body.removeChild(dimmer);
+          document.body.setAttribute('class', '');
+          window.removeEventListener('load', removeDimmer);
+        }, delay)
+      }
+
+      window.addEventListener('load', removeDimmer)
+    }())
+    </script>
+    
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
-    <div id="root">
-      <div class="App">
-        <div class="App-header">
-          <h2>Reorders</h2>
-        </div>
-        <p class="App-intro">
-          Loading site...
-        </p>
-    </div>
+    <div id="root"></div>
     <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.

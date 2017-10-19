@@ -99,7 +99,8 @@ class List extends Component {
         };
 
         disp(state => {
-          state = List.actionDataReady(path, data)(state);
+          state = List.actionDataReady(path, data)(state)
+            .deleteIn(path, 'isLoading');
 
           if( options ) {
             if( options.onDataReady && options.onDataReady.constructor === Function )
@@ -116,6 +117,7 @@ class List extends Component {
           console.log(error);
 
         disp(state => {
+          state = state.deleteIn(path, 'isLoading');
           if( options ) {
             if( options.onError && options.onError.constructor === Function )
               state = options.onError(state);
@@ -126,7 +128,7 @@ class List extends Component {
         });
       });
 
-      return state;
+      return state.setIn(path, 'isLoading', true);
     };
   }
   
@@ -139,7 +141,9 @@ class List extends Component {
       console.log('render List');
 
     const { props } = this;
-    const { path, view, rows, grps, keyField, headerField, imgField, titleField } = props;
+    const { path, view, rows, grps, isLoading,
+      keyField, headerField, imgField,
+      titleField, remainderField, reserveField, priceField, descField } = props;
 
     return (
     <Sui.Segment vertical style={{padding: 0}}>
@@ -150,7 +154,7 @@ class List extends Component {
         keyField={keyField}
         headerField={headerField}
         data={grps} />
-      <Sui.Segment style={{padding: 0, margin: 0}}>
+      <Sui.Segment loading={isLoading} style={{padding: 0, margin: 0}}>
         {rows.map((row) =>
           <Card
             key={row[keyField]}
@@ -159,6 +163,10 @@ class List extends Component {
             keyField={keyField}
             headerField={headerField}
             titleField={titleField}
+            remainderField={remainderField}
+            priceField={priceField}
+            reserveField={reserveField}
+            descField={descField}
             imgField={imgField} />)}
         </Sui.Segment>
       </Sui.Segment>);

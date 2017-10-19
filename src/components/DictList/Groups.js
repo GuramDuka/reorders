@@ -49,20 +49,19 @@ class Groups extends Component {
 
     const { props } = this;
     const { parent, isLoading, expanded, toggleGroups, switchGroup, clickBackward, keyField, headerField, data } = props;
-    const list = !isLoading && expanded ? data.map(grp =>
+    const list = expanded ? data.map(grp =>
       <Sui.Button style={{marginBottom:1}}
         size="tiny" basic
         key={grp[keyField]}
         link={grp[keyField]}
         onClick={switchGroup}>
-        {grp[headerField]}
+        {headerField(grp)}
       </Sui.Button>) : null;
 
-    const backward = isLoading ? <Sui.Progress percent={100} active />
-      : parent === nullLink ? null :
+    const backward = parent === nullLink ? null :
       <Sui.Button primary icon="backward" onClick={clickBackward} />
 
-    const switcher = isLoading || data.length === 0 ? null : expanded ? 
+    const switcher = data.length === 0 ? null : expanded ? 
       <Sui.Button primary onClick={toggleGroups} icon="compress" />
       :
       <Sui.Button primary
@@ -72,7 +71,7 @@ class Groups extends Component {
         icon="expand" />;
     
     return ( 
-      <Sui.Segment style={{padding: 0, margin: 0}}>
+      <Sui.Segment loading={isLoading} style={{padding: 0, margin: 0}}>
         {backward}
         {switcher}
         {list}

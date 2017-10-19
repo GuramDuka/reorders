@@ -168,7 +168,21 @@ const productsVisibleFields = [
 //------------------------------------------------------------------------------
 export const nullLink = '00000000-0000-0000-0000-000000000000';
 //------------------------------------------------------------------------------
+function sscat() {
+    let s = '';
+
+    for( const arg of arguments ) {
+        if( arg === undefined || arg === null )
+            continue;
+            
+        s += ' ' + arg.toString().trim();
+    }
+
+    return s.trim();
+}
+//------------------------------------------------------------------------------
 const defaultState = {
+    metadataVersion : 1,
     header      : {
         collapsed           : true,
         productsTreePath    : [{ key : nullLink, name : 'Каталог' }],
@@ -178,8 +192,12 @@ const defaultState = {
         list   : {
             fields       : productsVisibleFields,
             keyField     : 'Ссылка',
-            headerField  : 'Наименование',
+            headerField  : r => sscat(r.ЭтоГруппа ? null : '[' + r.Код + ']', r.Наименование, r.Артикул, r.Производитель),
             titleField   : 'НаименованиеПолное',
+            remainderField: 'ОстатокОбщий',
+            reserveField : 'Резерв',
+            priceField   : 'Цена',
+            descField    : 'ДополнительноеОписаниеНоменклатуры',
             imgField     : 'ОсновноеИзображение',
             isGroupField : 'ЭтоГруппа',
             rows         : [],
@@ -190,29 +208,59 @@ const defaultState = {
                 parent    : nullLink,
                 groups    : true,
                 elements  : true,
-                filter    : 'Таблица.ЭтоГруппа ИЛИ Таблица.ОстатокОбщий <> 0',
+                filter    : 'Таблица.ЭтоГруппа ИЛИ (Таблица.ОстатокОбщий <> 0 И Соединение.Цена > 0)',
                 fields    : [ ...productsVisibleFields.slice(0).reduce((a, v) => { a.push(v.name); return a; }, []), ...[
                     'ОсновноеИзображение'                           ,
                     'НаименованиеПолное'                            ,
                     'ДополнительноеОписаниеНоменклатуры'            ,
                     'ДополнительноеОписаниеНоменклатурыВФорматеHTML'
-                ]]
+                ]],
+                joins     : [
+                    {
+                        name    : 'Соединение',
+                        type    : 'ЛЕВОЕ',
+                        table   : 'РегистрСведений.ЦеныПоставщиков.СрезПоследних',
+                        on      : 'Таблица.Ссылка = Соединение.Номенклатура И Соединение.Цена > 0',
+                        fields  : 'Соединение.Цена'
+                    }
+                ]
             }
         }
     }
 };
 //------------------------------------------------------------------------------
-//let initialState = window.__INITIAL_STATE__;
-// Transform into Immutable.js collections,
-// but leave top level keys untouched for Redux
-//Object.keys(initialState).forEach(key => {
-//    initialState[key] = fromJS(initialState[key]);
-//});
-//------------------------------------------------------------------------------
 export const store = createStore(
     (state, action) => action.type.constructor === Function ? action.type(state) : state,
-    new State(defaultState)
+    new State((() => {
+        let state = localStorage.getItem('reduxState');
+        if( state !== null ) {
+            // eslint-disable-next-line
+            state = eval(state);
+            if( defaultState.metadataVersion !== state.metadataVersion )
+                state = defaultState;
+        }
+        else
+            state = defaultState;
+    
+        return state;
+    })())
 );
+//------------------------------------------------------------------------------
+function stringify(obj) {
+    const placeholder = '____PLACEHOLDER____';
+    const fns = [];
+    const json = JSON.stringify(obj, (key, value) => {
+      if( value.constructor === Function ) {
+        fns.push(value);
+        value = placeholder;
+      }
+      return value;
+    });
+    return '(' + json.replace(new RegExp(`"${placeholder}"`, 'g'), () => fns.shift()) + ')';
+  };
+//------------------------------------------------------------------------------
+store.subscribe(() =>
+    localStorage.setItem('reduxState', stringify(store.getState().root)));
 //------------------------------------------------------------------------------
 export default function disp(functor) {
     store.dispatch({
