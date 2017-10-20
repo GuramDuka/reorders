@@ -141,7 +141,7 @@ class List extends Component {
       console.log('render List');
 
     const { props } = this;
-    const { path, view, rows, grps, isLoading,
+    const { path, view, rows, grps,
       keyField, getHeaderField, headerField, imgField,
       titleField, remainderField, reserveField, priceField, descField } = props;
 
@@ -155,7 +155,7 @@ class List extends Component {
         getHeaderField={getHeaderField}
         headerField={headerField}
         data={grps} />
-      <Sui.Segment loading={isLoading} style={{padding: 0, margin: 0}}>
+      <Sui.Segment style={{padding: 0, margin: 0}}>
         {rows.map((row) =>
           <Card
             key={row[keyField]}
