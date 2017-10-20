@@ -2,14 +2,12 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
-import disp, { copy } from '../../store';
+import disp, { nullLink, copy } from '../../store';
 import BACKEND_URL, { transform, serializeURIParams } from '../../backend';
-import Groups from './Groups';
-import Card from './Card';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
-class List extends Component {
+class Props extends Component {
   static mapStateToProps(state, ownProps) {
     return state.mapIn(ownProps.path);
   }
@@ -70,7 +68,7 @@ class List extends Component {
         };
 
         disp(state => {
-          state = List.actionDataReady(path, data)(state)
+          state = Props.actionDataReady(path, data)(state)
             .deleteIn(path, 'isLoading');
 
           if( options ) {
@@ -104,47 +102,29 @@ class List extends Component {
   }
   
   componentWillMount() {
-    disp(List.actionReload(this.props.path));
+    disp(Props.actionReload(this.props.path));
   }
-
+  
+  state = { isLoading: false };
+  
   render() {
-    if( process.env.NODE_ENV === 'development' )
-      console.log('render List');
-
     const { props } = this;
-    const { path, view, rows, grps,
-      keyField, getHeaderField, headerField, imgField,
-      titleField, remainderField, reserveField, priceField, descField } = props;
+    const { expanded } = props;
 
+    if( process.env.NODE_ENV === 'development' )
+      console.log('render Props: ' + props.path);
+    
     return (
-    <Sui.Segment vertical style={{padding: 0}}>
-      <Groups
-        path={[...path, 'groups', view.parent]}
-        listPath={path}
-        parent={view.parent}
-        keyField={keyField}
-        getHeaderField={getHeaderField}
-        headerField={headerField}
-        data={grps} />
-      <Sui.Segment style={{padding: 0, margin: 0}}>
-        {rows.map((row) =>
-          <Card
-            key={row[keyField]}
-            path={[...path, 'cards', row[keyField]]}
-            data={row}
-            keyField={keyField}
-            getHeaderField={getHeaderField}
-            headerField={headerField}
-            titleField={titleField}
-            remainderField={remainderField}
-            priceField={priceField}
-            reserveField={reserveField}
-            descField={descField}
-            imgField={imgField} />)}
-        </Sui.Segment>
-      </Sui.Segment>);
+      <Sui.Dimmer.Dimmable as={Sui.Container} dimmed={this.state.isLoading}>
+        <Sui.Dimmer active={this.state.isLoading} inverted>
+          <Sui.Loader>Загрузка свойств...</Sui.Loader>
+        </Sui.Dimmer>
+        <p>{'Свойство1: 1111'}</p>
+        <p>{'Свойство2: 2222'}</p>
+        <p>{'Свойство3: 3333'}</p>
+      </Sui.Dimmer.Dimmable>);
   }
 }
 //------------------------------------------------------------------------------
-export default connect(List);
+export default connect(Props);
 //------------------------------------------------------------------------------

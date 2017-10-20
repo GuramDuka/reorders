@@ -3,8 +3,8 @@ import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import disp, { nullLink } from '../../store';
-import BACKEND_URL from '../../backend';
-import { serializeURIParams } from '../Base';
+import BACKEND_URL, { serializeURIParams } from '../../backend';
+import Props from './Props';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -20,7 +20,11 @@ class Card extends Component {
       clickPropsTitle : e => {
         // cast to integer, fast (and short) way is the double-bitwise not (i.e. using two tilde characters)
         const propsTitleIndex = ~~e.currentTarget.attributes.idx.value;
-        disp(state => state.setIn(path, 'propsActiveTitleIndex', propsTitleIndex));
+        disp(state => {
+          if( propsTitleIndex === 1 )
+            state = state.setIn([...path, 'properties'], 'expanded', true);
+          return state.setIn(path, 'propsActiveTitleIndex', propsTitleIndex);
+        });
       },
       clickImg : () => this.setState({isImgLargeViewOpen: true})
     };
@@ -82,11 +86,7 @@ class Card extends Component {
             Свойства
         </Sui.Accordion.Title>}
         <Sui.Accordion.Content active={propsActiveTitleIndex === 1}>
-          <Sui.Container>
-            <p>{'Свойство1: 1111'}</p>
-            <p>{'Свойство2: 2222'}</p>
-            <p>{'Свойство3: 3333'}</p>
-          </Sui.Container>
+          <Props path={[...props.path, 'properties']} />
         </Sui.Accordion.Content>{propsActiveTitleIndex === 2 && desc.length !== 0 ? null :
         <Sui.Accordion.Title active={propsActiveTitleIndex === 2}
           index={2} idx={2} onClick={clickPropsTitle}>

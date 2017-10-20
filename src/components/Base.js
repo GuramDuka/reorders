@@ -6,47 +6,6 @@ import connect from 'react-redux-connect';
 //import store from '../store';
 //import * as Util from '../util';
 //------------------------------------------------------------------------------
-function encode(val) {
-  return encodeURIComponent(val)
-    .replace(/%40/gi, '@')
-    .replace(/%3A/gi, ':')
-    .replace(/%24/g, '$')
-    .replace(/%2C/gi, ',')
-    //.replace(/%20/g, '+')
-    .replace(/%5B/gi, '[')
-    .replace(/%5D/gi, ']');
-}
-//------------------------------------------------------------------------------
-function parseValue(k, v) {
-  if( v.constructor === Date )
-    v = v.toISOString();
-  else if( v.constructor === Object )
-    v = JSON.stringify(v);
-  return encode(k) + '=' + encode(v);
-}
-//------------------------------------------------------------------------------
-export function serializeURIParams(params) {
-  let parts = [];
-  
-  for( let key in params ) {
-    let val = params[key];
-
-    if( val === null || typeof val === 'undefined' )
-      continue;
-
-    if( val.constructor === Array )
-      key += '[]';
-
-    if( val.constructor !== Array )
-      val = [val];
-
-    for( let v of val )
-      parts.push(parseValue(key, v));
-  }
-
-  return parts;
-}
-//------------------------------------------------------------------------------
 export function toggleBoolean(state, path, vname) {
   const vpath = [...path, vname];
   return state.getIn(vpath, false) ?
