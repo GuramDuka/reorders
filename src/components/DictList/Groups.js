@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import disp, { nullLink } from '../../store';
-import List from './List';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -13,61 +12,75 @@ class Groups extends Component {
   }
 
   static mapDispatchToProps(dispatch, ownProps) {
-    const { path, listPath } = ownProps;
+    const { path } = ownProps;
     return {
-      toggleGroups : e => disp(state => state.toggleIn(path, 'expanded')),
-      switchGroup  : (e, obj) => {
-        const link = e.currentTarget.attributes.link.value;
-        disp(state => {
-          //state = state.setIn(path, 'isLoading', true);
-          obj.setState({ isLoading: true });
-          return List.actionReload(listPath, {
-            transformView : view => view.parent = link,
-            onDone        : state => {
-              //state.deleteIn(path, 'isLoading')
-              obj.setState({ isLoading: false });
-              return state.updateIn(listPath, 'breadcrumb', v => { v.push(link); return v; }, 0);
-            }
-          })(state);
-        });
-      },
-      clickBackward  : (e, obj) => {
-        disp(state => {
-          obj.setState({ isLoading: true });
-          //state = state.setIn(path, 'isLoading', true);
-          const link = state.getIn(listPath, 'breadcrumb').slice(-2).shift();
-          return List.actionReload(listPath, {
-            transformView : view => view.parent = link,
-            onDone        : state => {
-              obj.setState({ isLoading: false });
-              //state.deleteIn(path, 'isLoading')
-              return state.updateIn(listPath, 'breadcrumb', v => { v.pop(); return v; }, 0)
-            }
-          })(state);
-        });
-      }
+      toggleGroups : e => disp(state => state.toggleIn(path, 'expanded'))
     };
   }
 
   state = { isLoading: false };
   
-  switchGroup = e => this.props.switchGroup(e, this);
-  clickBackward = e => this.props.clickBackward(e, this);
+  switchGroup = e => {
+    const link = e.currentTarget.attributes.link.value;
+    const obj = this;
+    const { listPath, listReloader } = obj.props;
+    obj.setState({ isLoading: true });
+    disp(state => {
+      return listReloader({
+        transformView : view => view.parent = link,
+        onDone        : state => {
+          if( state === undefined )
+            obj.setState({ isLoading: false });
+          else
+            state = state.updateIn(listPath, 'breadcrumb', v => { v.push(link); return v; }, 0);
+          return state;
+        },
+        onError       : state => {
+          if( state === undefined )
+            obj.setState({ isLoading: false });
+          return state;
+        }
+      })(state);
+    });
+  };
+
+  clickBackward = e => {
+    const obj = this;
+    const { listPath, listReloader } = obj.props;
+    obj.setState({ isLoading: true });
+    disp(state => {
+      const link = state.getIn(listPath, 'breadcrumb').slice(-2).shift();
+      return listReloader({
+        transformView : view => view.parent = link,
+        onDone        : state => {
+          if( state === undefined )
+            obj.setState({ isLoading: false });
+          else
+            state = state.updateIn(listPath, 'breadcrumb', v => { v.pop(); return v; }, 0);
+          return state;
+        },
+        onError       : state => {
+          if( state === undefined )
+            obj.setState({ isLoading: false });
+          return state;
+        }
+      })(state);
+    });
+  };
   
   render() {
     if( process.env.NODE_ENV === 'development' )
       console.log('render Groups');
 
     const { props } = this;
-    const { parent, expanded, toggleGroups,
-      keyField, getHeaderField, data } = props;
+    const { parent, expanded, toggleGroups, data } = props;
     const list = expanded ? data.map(grp =>
       <Sui.Button style={{marginBottom:1}}
         size="tiny" basic
-        key={grp[keyField]}
-        link={grp[keyField]}
+        key={grp.Ссылка}
+        link={grp.Ссылка}
         onClick={this.switchGroup}>
-        {getHeaderField(grp)}
+        {grp.Наименование}
       </Sui.Button>) : null;
 
     const backward = parent === nullLink ? null :

@@ -43,30 +43,38 @@
 //     add_header 'Service-Worker-Allowed' '/';
 // }
 //------------------------------------------------------------------------------
-export function transform(data, view) {
+export function transform(data, keyField) {
     const { cols, dict, text, boolean } = data;
+
     for( const k of [ 'rows', 'grps' ] ) {
         const recs = data[k];
+
+        if( recs === undefined )
+          continue;
+
         const rmap = {};
 
         for( let i = recs.length - 1; i >= 0; i-- ) {
-        const row = recs[i];
-        const now = { /*lineNo : i + 1*/ };
+          const row = recs[i];
+          const now = { /*lineNo : i + 1*/ };
 
-        for( let j = cols.length - 1; j >= 0; j-- ) {
-            const v = row[j];
+          for( let j = cols.length - 1; j >= 0; j-- ) {
+              const v = row[j];
 
-            if( v !== null ) {
-            const n = cols[j];
-            now[n] = text[n] ? dict[v] : (boolean[n] ? v !== 0 : v);
-            }
+              if( v !== null ) {
+                const n = cols[j];
+                now[n] = text[n] ? dict[v] : (boolean[n] ? v !== 0 : v);
+              }
+          }
+          recs[i] = now;
+
+          if( keyField !== undefined && keyField !== null )
+            rmap[now[keyField]] = now;
         }
-
-        recs[i] = now;
-        rmap[now[view.keyField]] = now;
-        data[k + 'Map'] = rmap;
-        }
-    }
+  
+        if( keyField !== undefined && keyField !== null )
+          data[k + 'Map'] = rmap;
+      }
 
     return data;
 }

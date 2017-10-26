@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
-import disp, { nullLink } from '../../store';
+import disp, { nullLink, sscat } from '../../store';
 import BACKEND_URL, { serializeURIParams } from '../../backend';
 import Props from './Props';
 //------------------------------------------------------------------------------
@@ -37,14 +37,12 @@ class Card extends Component {
 
   render() {
     const { props } = this;
-    const { expanded, toggleCard, data, getHeaderField, headerField,
-      imgField, titleField, remainderField, reserveField, priceField, descField,
-      propsActiveTitleIndex, clickPropsTitle } = props;
+    const { expanded, toggleCard, data, propsActiveTitleIndex, clickPropsTitle } = props;
 
     if( process.env.NODE_ENV === 'development' )
       console.log('render Card: ' + props.path[props.path.length - 1]);
     
-    const icoKey = data[imgField] || nullLink;
+    const icoKey = data.ОсновноеИзображение || nullLink;
     
     const icoUrl = BACKEND_URL + '?'
       + serializeURIParams({r: {m: 'img', f: 'ico', u: icoKey, w: 28, h: 28}});
@@ -56,7 +54,7 @@ class Card extends Component {
     const img = icoKey === nullLink ? null :
       <Sui.Image floated="left" size="tiny" src={imgUrl} onClick={this.clickImg}/>;
 
-    const desc = data[descField]
+    const desc = data.ДополнительноеОписаниеНоменклатуры
       //.replace(/\\r\\n/g, '<br />')
       //.replace(/\\r/g, '<br />')
       //.replace(/\\n/g, '<br />')
@@ -74,53 +72,57 @@ class Card extends Component {
             Основные
         </Sui.Accordion.Title>}
         <Sui.Accordion.Content active={propsActiveTitleIndex === 0 || propsActiveTitleIndex === undefined}>
-          <span>{'Код: ' + data.Код}</span>
-          {data.Артикул ? <span>{'Артикул: ' + data.Артикул}</span> : null}
-          {data.Производитель ? <span>{'Производитель: ' + data.Производитель}</span> : null}
-          {data[remainderField] ? <span>{'Остаток: ' + data[remainderField]}</span> : null}
-          {data[priceField] ? <span>{'Цена: ' + data[priceField]}</span> : null}
+          {'Код: ' + data.Код
+            + (data.Артикул ? ', Артикул: ' + data.Артикул : '')
+            + (data.Производитель ? ', Производитель: ' + data.Производитель : '')
+            + (data.ОстатокОбщий ? ', Остаток: ' + data.ОстатокОбщий : '')
+            + (data.Цена ? ', Цена: ' + data.Цена : '')}
         </Sui.Accordion.Content>{propsActiveTitleIndex === 1 ? null :
         <Sui.Accordion.Title active={propsActiveTitleIndex === 1}
           index={1} idx={1} onClick={clickPropsTitle}>
           <Sui.Icon name='dropdown' color="blue" />
             Свойства
         </Sui.Accordion.Title>}
-        <Sui.Accordion.Content active={propsActiveTitleIndex === 1}>
-          <Props path={[...props.path, 'properties']} />
-        </Sui.Accordion.Content>{propsActiveTitleIndex === 2 && desc.length !== 0 ? null :
+        <Sui.Accordion.Content active={propsActiveTitleIndex === 1}>{propsActiveTitleIndex !== 1 ? null :
+          <Props link={data.Ссылка} path={[...props.path, 'properties']} />}
+        </Sui.Accordion.Content>{desc.length === 0 || propsActiveTitleIndex === 2 ? null :
         <Sui.Accordion.Title active={propsActiveTitleIndex === 2}
           index={2} idx={2} onClick={clickPropsTitle}>
           <Sui.Icon name='dropdown' color="blue" />
             Описание
-        </Sui.Accordion.Title>}{desc.length !== 0 ?
+        </Sui.Accordion.Title>}{desc.length === 0 ? null :
         <Sui.Accordion.Content active={propsActiveTitleIndex === 2}>
           <Sui.Container fluid textAlign='justified'>{desc}</Sui.Container>
-        </Sui.Accordion.Content> : null}
+        </Sui.Accordion.Content>}
       </Sui.Accordion>;
         
+    const hdr = expanded ? data.НаименованиеПолное.trim().length === 0 ?
+      data.НаименованиеПолное : data.Наименование :
+      sscat(' ', '[' + data.Код + ']', data.Наименование, data.Артикул, data.Производитель);
+    
     return (
       <Sui.Card fluid style={{marginLeft: 0, marginRight: 0, marginTop: 0, marginBottom: 0}}>
         <Sui.Card.Content style={{padding: '.25em'}}>
           {expanded ? img : null}
           <Sui.Card.Header style={{fontSize: '87%'}}>
-          {expanded ?  null :
+          {expanded ? null :
             <Sui.Button compact size="tiny" circular primary
               onClick={toggleCard}
               icon="expand" />}
-            {expanded ? data[titleField].trim().length === 0 ? data[headerField] : data[titleField] : getHeaderField(data)}{expanded ? null :
+            {hdr}{expanded ? null :
             <Sui.Label size="small" color="teal" image>
               {ico}
-              {data[remainderField]}{data[reserveField] ? ' (' + data[reserveField] + ')' : ''}
-              <Sui.Label.Detail>{data[priceField]}₽</Sui.Label.Detail>
+              {data.ОстатокОбщий}{data.Резерв ? ' (' + data.Резерв + ')' : ''}
+              <Sui.Label.Detail>{data.Цена}₽</Sui.Label.Detail>
             </Sui.Label>}
           </Sui.Card.Header>{expanded ?
           <Sui.Card.Meta>
             {meta}
           </Sui.Card.Meta> : null}
         </Sui.Card.Content>{expanded ?
-        <Sui.Card.Content extra>
-          <Sui.Button compact basic size="small" color="primary" content="В корзину" icon="shop" labelPosition="left" />
-          <Sui.Button floated="right" compact size="tiny" circular primary onClick={toggleCard} icon="compress" />
+        <Sui.Card.Content extra style={{padding: '.25em'}}>
+          <Sui.Button compact size="tiny" circular primary onClick={toggleCard} icon="compress" />
+          <Sui.Button compact basic size="small" color="blue" content="В корзину" icon="shop" labelPosition="left" />
         </Sui.Card.Content> : null}{expanded ?
         <Sui.Modal dimmer="blurring" open={this.state.isImgLargeViewOpen} onClose={this.close}>
           <Sui.Modal.Content image>

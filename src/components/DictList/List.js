@@ -14,11 +14,15 @@ class List extends Component {
     return state.mapIn(ownProps.path);
   }
 
-  static actionDataReady(path, data) {
-    return state => state.mergeIn(path, data);
+  state = {
+    numr       : {},
+    rows       : [],
+    grps       : []
   };
-
-  static actionReload(path, options) {
+  
+  reload = (options) => {
+    const obj = this;
+    const { path } = this.props;
     return state => {
       let view = state.getIn(path, 'view');
       
@@ -60,25 +64,24 @@ class List extends Component {
         if( json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array) )
           throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
 
-        json = transform(json, view);
+        json = transform(json, 'Ссылка');
 
         const data = {
-          view       : view,
           numr       : json.numeric,
           rows       : json.rows,
           grps       : json.grps
         };
 
-        disp(state => {
-          state = List.actionDataReady(path, data)(state)
-            .deleteIn(path, 'isLoading');
+        obj.setState(data);
+        
+        if( options && options.onDone && options.onDone.constructor === Function )
+          options.onDone();
 
-          if( options ) {
-            if( options.onDataReady && options.onDataReady.constructor === Function )
-              state = options.onDataReady(state);
-            if( options.onDone && options.onDone.constructor === Function )
-              state = options.onDone(state);
-          }
+        disp(state => {
+          state = state.setIn(path, 'view', view);
+
+          if( options && options.onDone && options.onDone.constructor === Function )
+            state = options.onDone(state);
 
           return state;
         });
@@ -87,34 +90,30 @@ class List extends Component {
         if( process.env.NODE_ENV === 'development' )
           console.log(error);
 
+        if( options && options.onError && options.onError.constructor === Function )
+          options.onError();
+
         disp(state => {
-          state = state.deleteIn(path, 'isLoading');
-          if( options ) {
-            if( options.onError && options.onError.constructor === Function )
+          if( options && options.onError && options.onError.constructor === Function )
               state = options.onError(state);
-            if( options.onDone && options.onDone.constructor === Function )
-              state = options.onDone(state);
-          }
           return state;
         });
       });
 
-      return state.setIn(path, 'isLoading', true);
+      return state;
     };
-  }
+  };
   
   componentWillMount() {
-    disp(List.actionReload(this.props.path));
+    disp(this.reload(), true);
   }
 
   render() {
     if( process.env.NODE_ENV === 'development' )
       console.log('render List');
 
-    const { props } = this;
-    const { path, view, rows, grps,
-      keyField, getHeaderField, headerField, imgField,
-      titleField, remainderField, reserveField, priceField, descField } = props;
+    const { props, state } = this;
+    const { path, view } = props;
 
     return (
     <Sui.Segment vertical style={{padding: 0}}>
@@ -122,25 +121,14 @@ class List extends Component {
         path={[...path, 'groups', view.parent]}
         listPath={path}
         parent={view.parent}
-        keyField={keyField}
-        getHeaderField={getHeaderField}
-        headerField={headerField}
-        data={grps} />
+        listReloader={this.reload}
+        data={state.grps} />
       <Sui.Segment style={{padding: 0, margin: 0}}>
-        {rows.map((row) =>
+        {state.rows.map((row) =>
           <Card
-            key={row[keyField]}
-            path={[...path, 'cards', row[keyField]]}
-            data={row}
-            keyField={keyField}
-            getHeaderField={getHeaderField}
-            headerField={headerField}
-            titleField={titleField}
-            remainderField={remainderField}
-            priceField={priceField}
-            reserveField={reserveField}
-            descField={descField}
-            imgField={imgField} />)}
+            key={row.Ссылка}
+            path={[...path, 'cards', row.Ссылка]}
+            data={row} />)}
         </Sui.Segment>
       </Sui.Segment>);
   }

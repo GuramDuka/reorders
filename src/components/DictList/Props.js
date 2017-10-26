@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
-import disp, { nullLink, copy } from '../../store';
+import disp, { sscat } from '../../store';
 import BACKEND_URL, { transform, serializeURIParams } from '../../backend';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
@@ -12,19 +12,17 @@ class Props extends Component {
     return state.mapIn(ownProps.path);
   }
 
-  static actionDataReady(path, data) {
-    return state => state.mergeIn(path, data);
+  state = {
+    numr       : {},
+    rows       : [],
+    grps       : []
   };
-
-  static actionReload(path, options) {
+  
+  reload = (options) => {
+    const obj = this;
+    const { link } = obj.props;
+    obj.setState({ isLoading: true });
     return state => {
-      let view = state.getIn(path, 'view');
-      
-      if( options && options.transformView && options.transformView.constructor === Function ) {
-        view = copy(view);
-        options.transformView(view);
-      }
-
       const opts = {
         method      : options && options.refresh ? 'PUT' : 'GET',
         credentials : 'omit',
@@ -33,9 +31,9 @@ class Props extends Component {
       };
       
       const r = {
-        r : view,
-        m : 'dict',
-        f : 'list'
+        r : { type : 'Номенклатура', link : link },
+        m : 'props',
+        f : 'get'
       };
     
       if( opts.method === 'PUT' )
@@ -58,70 +56,47 @@ class Props extends Component {
         if( json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array) )
           throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
 
-        json = transform(json, view);
+        json = transform(json);
 
         const data = {
-          view       : view,
           numr       : json.numeric,
-          rows       : json.rows,
-          grps       : json.grps
+          rows       : json.rows
         };
 
-        disp(state => {
-          state = Props.actionDataReady(path, data)(state)
-            .deleteIn(path, 'isLoading');
-
-          if( options ) {
-            if( options.onDataReady && options.onDataReady.constructor === Function )
-              state = options.onDataReady(state);
-            if( options.onDone && options.onDone.constructor === Function )
-              state = options.onDone(state);
-          }
-
-          return state;
-        });
+        obj.setState({...data, isLoading: false});
       })
       .catch(error => {
         if( process.env.NODE_ENV === 'development' )
           console.log(error);
-
-        disp(state => {
-          state = state.deleteIn(path, 'isLoading');
-          if( options ) {
-            if( options.onError && options.onError.constructor === Function )
-              state = options.onError(state);
-            if( options.onDone && options.onDone.constructor === Function )
-              state = options.onDone(state);
-          }
-          return state;
-        });
+        obj.setState({ isLoading: false });
       });
 
-      return state.setIn(path, 'isLoading', true);
+      return state;
     };
-  }
+  };
   
   componentWillMount() {
-    disp(Props.actionReload(this.props.path));
+    disp(this.reload(), true);
   }
   
   state = { isLoading: false };
   
   render() {
-    const { props } = this;
-    const { expanded } = props;
+    const { props, state } = this;
 
     if( process.env.NODE_ENV === 'development' )
-      console.log('render Props: ' + props.path);
+      console.log('render Props: ' + props.link);
     
+    const data = [];
+    if( state.rows )
+      state.rows.map(row => data.push(row.СвойствоПредставление + ': ' + row.ЗначениеПредставление));
+
     return (
-      <Sui.Dimmer.Dimmable as={Sui.Container} dimmed={this.state.isLoading}>
-        <Sui.Dimmer active={this.state.isLoading} inverted>
+      <Sui.Dimmer.Dimmable as={Sui.Container} dimmed={state.isLoading}>
+        <Sui.Dimmer active={state.isLoading} inverted>
           <Sui.Loader>Загрузка свойств...</Sui.Loader>
         </Sui.Dimmer>
-        <p>{'Свойство1: 1111'}</p>
-        <p>{'Свойство2: 2222'}</p>
-        <p>{'Свойство3: 3333'}</p>
+        {state.rows ? <span>{sscat(', ', ...data)}</span> : null}
       </Sui.Dimmer.Dimmable>);
   }
 }
