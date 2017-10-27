@@ -127,6 +127,7 @@ class List extends Component {
         {state.rows.map((row) =>
           <Card
             key={row.Ссылка}
+            link={row.Ссылка}
             path={[...path, 'cards', row.Ссылка]}
             data={row} />)}
         </Sui.Segment>

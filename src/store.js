@@ -12,12 +12,8 @@ export function copy(src) {
         for (const n in src)
             dst[n] = copy(src[n]);
     }
-    else if (src.constructor === Array) {
-        dst = [];
-
-        for (const v of src)
-            dst.push(copy(v));
-    }
+    else if (src.constructor === Array)
+        dst = Array.from(src);
     else if (src.constructor === String)
         dst = src.valueOf();
     else if (src.constructor === Number)
@@ -46,7 +42,7 @@ class State {
 
     dispatch(begin) {
         if (begin) {
-            if( this.mutated !== undefined )
+            if (this.mutated !== undefined)
                 throw new Error('already dispatched');
             this.mutated = new Map();
             return this;
@@ -63,7 +59,7 @@ class State {
     // }
 
     getNode(path, key, createNode, mutateParents, manipulator, arg0) {
-        if( process.env.NODE_ENV === 'development' )
+        if (process.env.NODE_ENV === 'development')
             if (!Array.isArray(path))
                 throw new Error('path must be array');
 
@@ -75,8 +71,9 @@ class State {
             let next = node[k];
 
             if (next === undefined && createNode) {
-                node[k] = next = k.constructor === String ? {} : k.constructor === Number ? [] : undefined;
-                if( process.env.NODE_ENV === 'development' )
+                node[k] = next = (i + 1 < l && k.constructor === String) || (i + 1 === l && key.constructor === String) ? {}
+                    : ((i + 1 < l && k.constructor === Number) || (i + 1 === l && key.constructor === Number) ? [] : undefined);
+                if (process.env.NODE_ENV === 'development')
                     if (next === undefined)
                         throw new Error('path key must have String or Number type');
             }
@@ -86,8 +83,8 @@ class State {
 
             if (l - mutateParents <= i && this.mutated.get(next) === undefined) {
                 next = next.constructor === Object ? Object.assign({}, next)
-                    : next.constructor === Array ? next.slice(0) : undefined;
-                if( process.env.NODE_ENV === 'development' )
+                    : next.constructor === Array ? Array.from(next) : undefined;
+                if (process.env.NODE_ENV === 'development')
                     if (next === undefined)
                         throw new Error('value must have Object or Array type');
                 node[k] = next;
@@ -121,6 +118,15 @@ class State {
 
     updateIn(path, key, functor, mutateParents = 1) {
         this.getNode(path, key, true, mutateParents, State.mUpdateIn, functor);
+        return this;
+    }
+
+    static mEditIn(node, key, functor) {
+        functor(node, node[key], key);
+    }
+
+    editIn(path, key, functor, mutateParents = 1) {
+        this.getNode(path, key, true, mutateParents, State.mEditIn, functor);
         return this;
     }
 
@@ -172,7 +178,7 @@ export function sscat(delimiter, ...args) {
             continue;
 
         const a = arg.toString().trim();
-        if( a.length !== 0 )
+        if (a.length !== 0)
             s += delimiter + a;
     }
 
@@ -180,7 +186,7 @@ export function sscat(delimiter, ...args) {
 }
 //------------------------------------------------------------------------------
 const defaultState = {
-    metadataVersion: 4,
+    metadataVersion: 7,
     header: {
         collapsed: true,
         productsTreePath: [{ key: nullLink, name: 'Каталог' }],
@@ -194,23 +200,21 @@ const defaultState = {
                 parent: nullLink,
                 groups: true,
                 elements: true,
-                filter: 'Таблица.ЭтоГруппа ИЛИ (Таблица.ОстатокОбщий <> 0 И Соединение.Цена > 0)',
+                filter: 'Таблица.ЭтоГруппа ИЛИ Таблица.ОстатокОбщий <> 0',
+                joinsFilter: 'Таблица.ЭтоГруппа ИЛИ Соединение.Цена > 0',
                 fields: [
                     'Код',
                     'Наименование',
                     'Артикул',
                     'Производитель',
                     'ОстатокОбщий',
-                    'ОсновноеИзображение',
-                    'НаименованиеПолное',
-                    'ДополнительноеОписаниеНоменклатуры',
-                    'ДополнительноеОписаниеНоменклатурыВФорматеHTML'
+                    'ОсновноеИзображение'
                 ],
                 joins: [
                     {
                         name: 'Соединение',
                         type: 'ЛЕВОЕ',
-                        table: 'РегистрСведений.ЦеныПоставщиков.СрезПоследних',
+                        table: 'РегистрСведений.ЦеныПоставщиков.СрезПоследних(, Номенклатура В (ВЫБРАТЬ ВТ.Ссылка ИЗ ВТ ГДЕ ВТ.ЭтоГруппа = ЛОЖЬ))',
                         on: 'Таблица.Ссылка = Соединение.Номенклатура И Соединение.Цена > 0',
                         fields: 'Соединение.Цена'
                     }
@@ -241,7 +245,7 @@ function stringify(obj) {
     const placeholder = '____PLACEHOLDER____';
     const fns = [];
     const json = JSON.stringify(obj, (key, value) => {
-        if (value.constructor === Function) {
+        if (value !== undefined && value !== null && value.constructor === Function) {
             fns.push(value);
             value = placeholder;
         }
@@ -254,7 +258,7 @@ store.subscribe(() =>
     localStorage.setItem('reduxState', stringify(store.getState().root)));
 //------------------------------------------------------------------------------
 export default function disp(functor, async) {
-    if( async )
+    if (async)
         functor(store.getState().dispatch(true)).dispatch();
     else
         store.dispatch({

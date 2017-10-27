@@ -22,6 +22,7 @@ class Props extends Component {
     const obj = this;
     const { link } = obj.props;
     obj.setState({ isLoading: true });
+    
     return state => {
       const opts = {
         method      : options && options.refresh ? 'PUT' : 'GET',
@@ -78,8 +79,6 @@ class Props extends Component {
   componentWillMount() {
     disp(this.reload(), true);
   }
-  
-  state = { isLoading: false };
   
   render() {
     const { props, state } = this;

@@ -44,6 +44,12 @@
 // }
 //------------------------------------------------------------------------------
 export function transform(data, keyField) {
+    if( Array.isArray(data) ) {
+      for( let i = data.length - 1; i >= 0; i-- )
+        data[i] = transform(data[i], keyField);
+      return data;
+    }
+
     const { cols, dict, text, boolean } = data;
 
     for( const k of [ 'rows', 'grps' ] ) {
