@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import disp from '../store';
+import Searcher from './Searcher';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -32,18 +33,11 @@ class Header extends Component {
           state.getIn([...path, 'customersTreePath'])
           return state;
         })
-      },
-      clickSearch: e => {
-        const level = ~~e.target.attributes.level.value;
-        disp(state => {
-          return state.updateIn([...path, 'productsTreePath']).without((v, k) => k > level);
-        })
       }
     };
   }
 
   render() {
-    const { props } = this;
     return (
       <Sui.Menu fixed='top'>
       <Sui.Dropdown item icon='wrench' simple>
@@ -77,13 +71,7 @@ class Header extends Component {
       </Sui.Dropdown>
 
       <Sui.Menu.Menu position='right'>
-        <div className='ui right aligned category search item'>
-          <div className='ui transparent icon input'>
-            <input className='prompt' type='text' placeholder='Поиск...' />
-            <i className='search link icon' onClick={props.clickSearch} />
-          </div>
-          <div className='results'></div>
-        </div>
+        <Searcher path={[...this.props.path, 'searcher']} />
       </Sui.Menu.Menu>
     </Sui.Menu>
     

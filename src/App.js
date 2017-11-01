@@ -6,10 +6,15 @@ import semanticLogo from './assets/semantic-logo.png'
 import './css/App.css';
 import Header from './components/Header';
 import DictListView from './components/DictList/List';
+import SearcherResults from './components/SearcherResults';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
 class App extends Component {
+  static mapStateToProps(state, ownProps) {
+    return state.mapIn(ownProps.path);
+  }
+
   // constructor(props, context) {
   //   super(props, context);
   //   this.state = {};
@@ -40,12 +45,14 @@ class App extends Component {
   render() {
     if( process.env.NODE_ENV === 'development' )
       console.log('render App');
+    const { props } = this;
     return (
       <div>
         <Header path={['header']} />
 
-        <Sui.Segment vertical style={{marginTop: '2.2em'}}>
-          <DictListView path={['products', 'list']} />
+        <Sui.Segment vertical style={{marginTop: '2.2em'}}>{props.view !== 'products' ? null :
+          <DictListView path={['products', 'list']} />}{props.view !== 'searcherResults' ? null :
+          <SearcherResults path={['searcher', 'results']} />}
         </Sui.Segment>
           
         <Sui.Segment vertical>

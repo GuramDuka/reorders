@@ -192,6 +192,7 @@ const defaultState = {
         productsTreePath: [{ key: nullLink, name: 'Каталог' }],
         customersTreePath: [{ key: nullLink, name: 'Контрагенты' }]
     },
+    view: 'products',
     products: {
         list: {
             breadcrumb: [{name: '', link: nullLink}],
