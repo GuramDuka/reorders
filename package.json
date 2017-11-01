@@ -15,13 +15,13 @@
     "react-dom": "^16.0.0",
     "react-redux": "^5.0.6",
     "react-redux-connect": "^0.1.0",
-    "react-scripts": "1.0.14",
+    "react-scripts": "1.0.15",
     "react-transition-group": "^2.2.1",
     "redux": "^3.7.2",
     "seamless-immutable": "^7.1.2",
     "semantic-ui-css": "^2.2.12",
     "semantic-ui-react": "^0.75.1",
-    "typeface-roboto": "0.0.41"
+    "typeface-roboto": "0.0.43"
   },
   "proxy": {
     "/api/backend": {

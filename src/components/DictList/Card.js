@@ -123,8 +123,8 @@ class Card extends Component {
       <Sui.Image floated="left" size="tiny" src={imgUrl} onClick={this.clickImg}/>;
 
     const prop = expanded && state.props ? state.props.rows.map((row, i) => i !== 0
-       ? <span key={i}><i>, </i><strong>{row.СвойствоПредставление}: </strong><i>{row.ЗначениеПредставление}</i></span>
-       : <span key={i}><strong>{row.СвойствоПредставление}: </strong><i>{row.ЗначениеПредставление}</i></span>) : null;
+       ? [<i key="0">, </i>, <strong key="1">{row.СвойствоПредставление}: </strong>, <i key="2">{row.ЗначениеПредставление}</i>]
+       : [<strong key="0">{row.СвойствоПредставление}: </strong>, <i key="1">{row.ЗначениеПредставление}</i>]) : null;
   
     const desc = expanded && state.desc
       ? state.desc.ДополнительноеОписаниеНоменклатуры
@@ -140,11 +140,11 @@ class Card extends Component {
     const meta = expanded ?
       <Sui.Accordion exclusive={false}>
         <Sui.Accordion.Content active={true}>
-          <span><strong>Код: </strong><i>{data.Код}</i></span>
-          {data.Артикул       ? <span><i>, </i><strong>Артикул: </strong><i>{data.Артикул}</i></span> : null}
-          {data.Производитель ? <span><i>, </i><strong>Производитель:</strong><i>{data.Производитель}</i></span> : null}
-          {data.ОстатокОбщий  ? <span><i>, </i><strong>Остаток:</strong><i>{data.ОстатокОбщий}</i></span> : null}
-          {data.Цена          ? <span><i>, </i><strong>Цена:</strong><i>{data.Цена + '₽'}</i></span> : null}
+          {[<strong key="0">Код: </strong>, <i key="1">{data.Код}</i>]}
+          {data.Артикул       ? [<i key="2">, </i>, <strong key="6">Артикул: </strong>, <i key="10">{data.Артикул}</i>] : null}
+          {data.Производитель ? [<i key="3">, </i>, <strong key="7">Производитель:</strong>, <i key="11">{data.Производитель}</i>] : null}
+          {data.ОстатокОбщий  ? [<i key="4">, </i>, <strong key="8">Остаток:</strong>, <i key="12">{data.ОстатокОбщий}</i>] : null}
+          {data.Цена          ? [<i key="5">, </i>, <strong key="9">Цена:</strong>, <i key="13">{data.Цена + '₽'}</i>] : null}
         </Sui.Accordion.Content>{prop ?
         <Sui.Accordion.Title active={!!activeTitles[1]}
           index={1} idx={1} onClick={clickPropsTitle}>
@@ -179,12 +179,7 @@ class Card extends Component {
       <Sui.Card fluid style={{marginLeft: 0, marginRight: 0, marginTop: 0, marginBottom: 0}}>
         <Sui.Card.Content style={{padding: '.25em'}}>
           {expanded ? img : null}
-          <Sui.Card.Header style={{fontSize: '87%'}}>
-          {expanded ? null :
-            <Sui.Button compact size="tiny" circular primary
-              expanded={expandedString}
-              onClick={this.toggleCard}
-              icon="expand" />}
+          <Sui.Card.Header style={{fontSize: '87%'}} expanded={expandedString} onClick={this.toggleCard}>
             {hdr}{expanded ? null :
             <Sui.Label size="small" color="teal" image>
               {ico}
@@ -205,7 +200,7 @@ class Card extends Component {
             <Sui.Image wrapped fluid src={imgUrl} />
           </Sui.Modal.Content>
           <Sui.Modal.Actions>
-            <Sui.Button positive icon='checkmark' labelPosition='right' content="Закрыть" onClick={this.closeImgLargeView} />
+            <Sui.Button icon='checkmark' labelPosition='right' content="Закрыть" onClick={this.closeImgLargeView} />
           </Sui.Modal.Actions>
         </Sui.Modal> : null}
       </Sui.Card>);

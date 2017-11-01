@@ -121,6 +121,7 @@ class List extends Component {
         path={[...path, 'groups', view.parent]}
         listPath={path}
         parent={view.parent}
+        breadcrumb={props.breadcrumb}
         listReloader={this.reload}
         data={state.grps} />
       <Sui.Segment style={{padding: 0, margin: 0}}>

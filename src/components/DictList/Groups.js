@@ -21,18 +21,28 @@ class Groups extends Component {
   state = { isLoading: false };
   
   switchGroup = e => {
-    const link = e.currentTarget.attributes.link.value;
+    const opt = {
+      name: e.currentTarget.attributes.name.value,
+      link: e.currentTarget.attributes.link.value
+    };
     const obj = this;
     const { listPath, listReloader } = obj.props;
     obj.setState({ isLoading: true });
     disp(state => {
       return listReloader({
-        transformView : view => view.parent = link,
+        transformView : view => view.parent = opt.link,
         onDone        : state => {
           if( state === undefined )
             obj.setState({ isLoading: false });
           else
-            state = state.updateIn(listPath, 'breadcrumb', v => { v.push(link); return v; }, 0);
+            state = state.updateIn(listPath, 'breadcrumb', a => {
+              const i = a.findIndex(v => v.link === opt.link);
+              if( i < 0 )
+                a.push(opt);
+              else
+                a = a.slice(0, i + 1);
+              return a;
+            }, 0);
           return state;
         },
         onError       : state => {
@@ -49,7 +59,7 @@ class Groups extends Component {
     const { listPath, listReloader } = obj.props;
     obj.setState({ isLoading: true });
     disp(state => {
-      const link = state.getIn(listPath, 'breadcrumb').slice(-2).shift();
+      const link = state.getIn(listPath, 'breadcrumb').slice(-2).shift().link;
       return listReloader({
         transformView : view => view.parent = link,
         onDone        : state => {
@@ -75,31 +85,41 @@ class Groups extends Component {
     const { props } = this;
     const { parent, expanded, toggleGroups, data } = props;
     const list = expanded ? data.map(grp =>
-      <Sui.Button style={{marginBottom:1}}
-        size="tiny" basic
+      <Sui.Button style={{marginBottom:1}} compact
+        size="tiny" basic color="blue"
         key={grp.Ссылка}
         link={grp.Ссылка}
-        onClick={this.switchGroup}>
-        {grp.Наименование}
-      </Sui.Button>) : null;
-
-    const backward = parent === nullLink ? null :
-      <Sui.Button primary icon="backward" onClick={this.clickBackward} />
+        name={grp.Наименование}
+        content={grp.Наименование}
+        onClick={this.switchGroup} />) : null;
 
     const switcher = data.length === 0 ? null : expanded ? 
-      <Sui.Button primary onClick={toggleGroups} icon="compress" />
+      <Sui.Button compact primary size="tiny" onClick={toggleGroups} icon="compress" />
       :
-      <Sui.Button primary
-        content="Группы"
-        label={{content: data.length}}
+      <Sui.Button compact primary size="tiny"
+        content={'Группы ' + data.length}
         onClick={toggleGroups}
         icon="expand" />;
     
-    return ( 
-      <Sui.Segment loading={this.state.isLoading} style={{padding: 0, margin: 0}}>
-        {backward}
+    const breadcrumb = <Sui.Breadcrumb style={{padding: 0, margin: 0}}>{parent === nullLink ? null :
+        <Sui.Button compact size="tiny" primary icon="backward" onClick={this.clickBackward} style={{marginBottom:1}} />}
+        {props.breadcrumb.map((v, i, a) => [
+        <Sui.Breadcrumb.Section key={i*a.length+1} style={{padding: 0, margin: 0}}>
+          <Sui.Button compact basic size="tiny" primary={i + 1 !== a.length} icon
+            onClick={i + 1 !== a.length ? this.switchGroup : null}
+            link={v.link}
+            name={v.name}>
+            {i === 0 ? <Sui.Icon name="home" /> : v.name}
+          </Sui.Button>
+        </Sui.Breadcrumb.Section>, i + 1 === a.length ? null :
+        <Sui.Breadcrumb.Divider key={i*a.length+2} icon="right chevron" />])}
         {switcher}
         {list}
+      </Sui.Breadcrumb>;
+
+    return ( 
+      <Sui.Segment loading={this.state.isLoading} style={{padding: 0, margin: 0}}>
+        {breadcrumb}
       </Sui.Segment>);
   }
 }
