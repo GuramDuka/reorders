@@ -58,6 +58,18 @@ class State {
     // 	return a[0].toString() + a[1].toString() + a[2].toString();
     // }
 
+    mutateNode(node) {
+      if (this.mutated.get(node) === undefined) {
+        node = node.constructor === Object ? Object.assign({}, node)
+          : node.constructor === Array ? Array.from(node) : undefined;
+        if (process.env.NODE_ENV === 'development')
+          if (node === undefined)
+            throw new Error('value must have Object or Array type');
+        this.mutated.set(node, true);
+      }
+      return node;
+    }
+
     getNode(path, key, createNode, mutateParents, manipulator, arg0) {
         if (process.env.NODE_ENV === 'development')
             if (!Array.isArray(path))
@@ -66,7 +78,11 @@ class State {
         const l = path.length;
         let node = this.root;
 
-        for (let i = 0; i < l; i++) {
+        if (l === 0) {
+          if( mutateParents !== 0 )
+            this.root = node = this.mutateNode(node);
+        }
+        else for (let i = 0; i < l; i++) {
             const k = path[i];
             let next = node[k];
 
@@ -81,15 +97,8 @@ class State {
             if (next === undefined)
                 break;
 
-            if (l - mutateParents <= i && this.mutated.get(next) === undefined) {
-                next = next.constructor === Object ? Object.assign({}, next)
-                    : next.constructor === Array ? Array.from(next) : undefined;
-                if (process.env.NODE_ENV === 'development')
-                    if (next === undefined)
-                        throw new Error('value must have Object or Array type');
-                node[k] = next;
-                this.mutated.set(next, true);
-            }
+            if (l - mutateParents <= i && this.mutated.get(next) === undefined)
+                node[k] = next = this.mutateNode(next);
 
             node = next;
         }
@@ -163,8 +172,8 @@ class State {
         return this.getNode(path, key, false, 0, State.mGetIn, defaultValue);
     }
 
-    mapIn(path, key) {
-        return this.getNode(path, key, false, 0, State.mGetIn, {});
+    mapIn(path, key, defaultValue = {}) {
+        return this.getNode(path, key, false, 0, State.mGetIn, defaultValue);
     }
 }
 //------------------------------------------------------------------------------
@@ -192,10 +201,12 @@ const defaultState = {
         productsTreePath: [{ key: nullLink, name: 'Каталог' }],
         customersTreePath: [{ key: nullLink, name: 'Контрагенты' }]
     },
-    view: 'products',
+    body: {
+      view: 'products'
+    },
     products: {
         list: {
-            breadcrumb: [{name: '', link: nullLink}],
+            breadcrumb: [{ name: '', link: nullLink }],
             view: {
                 type: 'Номенклатура',
                 parent: nullLink,

@@ -39,7 +39,7 @@ class Header extends Component {
 
   render() {
     return (
-      <Sui.Menu fixed='top'>
+    <Sui.Menu fixed='top'>
       <Sui.Dropdown item icon='wrench' simple>
         <Sui.Dropdown.Menu>
           <Sui.Dropdown.Item>

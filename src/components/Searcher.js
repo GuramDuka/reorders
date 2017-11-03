@@ -2,7 +2,22 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
-import disp from '../store';
+import disp, { nullLink } from '../store';
+//------------------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
+class Icon extends Component {
+  state = { isLoading: false };
+
+  render() {
+    if( process.env.NODE_ENV === 'development' )
+      console.log('render Searcher.Icon');
+
+    return <Sui.Icon
+      loading={this.state.isLoading}
+      name={this.state.isLoading ? 'spinner' : 'search'} />;
+  }
+};
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -11,57 +26,47 @@ class Searcher extends Component {
     return state.mapIn(ownProps.path);
   }
 
-  state = { isLoading: false, value: '', results: [] };
-  
-  /*handleResultSelect = (e, { result }) => this.setState({ value: result.title })
-  
-  handleSearchChange = (e, { value }) => {
-      this.setState({ isLoading: true, value })
-  
-      setTimeout(() => {
-        //if (this.state.value.length < 1) return this.resetComponent()
-  
-        this.setState({
-          isLoading: false
-        });
-      }, 500)
-    }
-    
-  render() {
-    const { props, state } = this;
-    return <Sui.Search
-      minCharacters={2}
-      loading={state.isLoading}
-      onResultSelect={this.handleResultSelect}
-      onSearchChange={this.handleSearchChange}
-      value={state.value} />;
-  }*/
+  state = { value: '' };
 
   handleSearchChange = (e, data) => {
     const value = data.value.trim();
-    const obj = this;
-    obj.setState({ isLoading: true });
-    setTimeout(e => {
-      disp(state => {
-        return state;
-      });
+    
+    if( value.length === 0 )
+      return;
+
+    clearTimeout(this.timeoutId);
+
+    this.timeoutId = setTimeout(e => {
+      this.icon.setState({isLoading: true});
+      disp(state => state
+        .setIn(['body'], 'view', 'searcherResults')
+        .mergeIn(['searcher'], {
+          parent: state.getIn(['products', 'list', 'view'], 'parent', nullLink),
+          filter: value}))
     }, 500);
   };
   
-  //componentWillMount() {
-  //}
+  initValue = state => {
+    this.setState({value: state.getIn(['searcher'], 'filter', '')});
+    return state;
+  };
+
+  componentDidMount() {
+    disp(this.initValue, true);
+  }
   
   render() {
-    const { props, state } = this;
-    return (
-      <Sui.Input
-        style={{marginRight:'1em'}}
-        transparent
-        loading={state.isLoading}
-        icon="search"
-        placeholder="Поиск..."
-        onChange={this.handleSearchChange} />
-    );
+    if( process.env.NODE_ENV === 'development' )
+      console.log('render Searcher');
+
+    const { state } = this;
+    return <Sui.Input
+      style={{marginRight:'1em'}}
+      transparent
+      icon={<Icon ref={icon => this.icon = icon} />}
+      placeholder="Поиск..."
+      value={state.value}
+      onChange={this.handleSearchChange} />;
   }
 }
 //------------------------------------------------------------------------------

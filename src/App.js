@@ -5,8 +5,7 @@ import * as Sui from 'semantic-ui-react';
 import semanticLogo from './assets/semantic-logo.png'
 import './css/App.css';
 import Header from './components/Header';
-import DictListView from './components/DictList/List';
-import SearcherResults from './components/SearcherResults';
+import Body from './components/Body';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -41,36 +40,33 @@ class App extends Component {
   // componentWillUnmount() {
   //   window.removeEventListener('resize', this.handleResize);
   // }
-  
+
   render() {
     if( process.env.NODE_ENV === 'development' )
       console.log('render App');
-    const { props } = this;
-    return (
-      <div>
-        <Header path={['header']} />
 
-        <Sui.Segment vertical style={{marginTop: '2.2em'}}>{props.view !== 'products' ? null :
-          <DictListView path={['products', 'list']} />}{props.view !== 'searcherResults' ? null :
-          <SearcherResults path={['searcher', 'results']} />}
-        </Sui.Segment>
-          
-        <Sui.Segment vertical>
-          <Sui.Container textAlign='center'>
-            <Sui.Divider inverted section />
-            <Sui.Image centered size='mini' src={semanticLogo} style={{marginBottom: '1em'}} />
-            <Sui.List divided link>
-              <Sui.List.Item as='a' href='#'>Contact Us</Sui.List.Item>
-              <Sui.List.Item as='a' href='#'>Terms and Conditions</Sui.List.Item>
-              <Sui.List.Item as='a' href='#'>Privacy Policy</Sui.List.Item>
-            </Sui.List>
-          </Sui.Container>
-        </Sui.Segment>
+    return [
+      <Header key={0} path={['header']} />,
 
-        <Sui.Segment attached='bottom'>
-          Bottom segment
-        </Sui.Segment>
-      </div>);
+      <Sui.Segment key={1} vertical style={{marginTop: '2.2em'}}>
+        <Body path={['body']} />
+      </Sui.Segment>,
+        
+      <Sui.Segment key={2} vertical>
+        <Sui.Container textAlign="center">
+          <Sui.Divider inverted section />
+          <Sui.Image centered size="mini" src={semanticLogo} style={{marginBottom: '1em'}} />
+          <Sui.List divided link>
+            <Sui.List.Item as='a' href='#'>Contact Us</Sui.List.Item>
+            <Sui.List.Item as='a' href='#'>Terms and Conditions</Sui.List.Item>
+            <Sui.List.Item as='a' href='#'>Privacy Policy</Sui.List.Item>
+          </Sui.List>
+        </Sui.Container>
+      </Sui.Segment>,
+
+      <Sui.Segment key={3} attached='bottom'>
+        Bottom segment
+      </Sui.Segment>];
   }
 }
 //------------------------------------------------------------------------------

@@ -143,7 +143,7 @@ class Card extends Component {
           {[<strong key="0">Код: </strong>, <i key="1">{data.Код}</i>]}
           {data.Артикул       ? [<i key="2">, </i>, <strong key="6">Артикул: </strong>, <i key="10">{data.Артикул}</i>] : null}
           {data.Производитель ? [<i key="3">, </i>, <strong key="7">Производитель:</strong>, <i key="11">{data.Производитель}</i>] : null}
-          {data.ОстатокОбщий  ? [<i key="4">, </i>, <strong key="8">Остаток:</strong>, <i key="12">{data.ОстатокОбщий}</i>] : null}
+          {data.Остаток       ? [<i key="4">, </i>, <strong key="8">Остаток:</strong>, <i key="12">{data.Остаток}</i>] : null}
           {data.Цена          ? [<i key="5">, </i>, <strong key="9">Цена:</strong>, <i key="13">{data.Цена + '₽'}</i>] : null}
         </Sui.Accordion.Content>{prop ?
         <Sui.Accordion.Title active={!!activeTitles[1]}
