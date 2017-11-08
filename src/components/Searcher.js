@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
+import * as PubSub from 'pubsub-js';
 import disp, { nullLink } from '../store';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
@@ -21,12 +22,12 @@ class Icon extends Component {
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
+export const LOADING_DONE_TOPIC = 'LOADING_DONE';
+//------------------------------------------------------------------------------
 class Searcher extends Component {
   static mapStateToProps(state, ownProps) {
     return state.mapIn(ownProps.path);
   }
-
-  state = { value: '' };
 
   handleSearchChange = (e, data) => {
     const value = data.value.trim();
@@ -43,16 +44,24 @@ class Searcher extends Component {
         .mergeIn(['searcher'], {
           parent: state.getIn(['products', 'list', 'view'], 'parent', nullLink),
           filter: value}))
-    }, 500);
+    }, 1500);
   };
   
   initValue = state => {
-    this.setState({value: state.getIn(['searcher'], 'filter', '')});
+    this.value = state.getIn(['searcher'], 'filter', '');
     return state;
   };
 
-  componentDidMount() {
+  componentWillMount() {
     disp(this.initValue, true);
+  }
+
+  componentDidMount() {
+    PubSub.subscribe(LOADING_DONE_TOPIC, (msg, data) => this.icon.setState({isLoading: false}));
+  }
+  
+  componentWillUnmount() {
+    PubSub.unsubscribe(LOADING_DONE_TOPIC);
   }
   
   render() {
@@ -63,9 +72,9 @@ class Searcher extends Component {
     return <Sui.Input
       style={{marginRight:'1em'}}
       transparent
-      icon={<Icon ref={icon => this.icon = icon} />}
+      icon={<Icon ref={e => this.icon = e} />}
       placeholder="Поиск..."
-      value={state.value}
+      defaultValue={this.value}
       onChange={this.handleSearchChange} />;
   }
 }

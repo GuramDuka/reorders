@@ -38,6 +38,9 @@ class Header extends Component {
   }
 
   render() {
+    if( process.env.NODE_ENV === 'development' )
+      console.log('render Header');
+
     return (
     <Sui.Menu fixed='top'>
       <Sui.Dropdown item icon='wrench' simple>

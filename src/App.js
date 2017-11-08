@@ -50,7 +50,7 @@ class App extends Component {
 
       <Sui.Segment key={1} vertical style={{marginTop: '2.2em'}}>
         <Body path={['body']} />
-      </Sui.Segment>,
+      </Sui.Segment>/*,
         
       <Sui.Segment key={2} vertical>
         <Sui.Container textAlign="center">
@@ -66,7 +66,7 @@ class App extends Component {
 
       <Sui.Segment key={3} attached='bottom'>
         Bottom segment
-      </Sui.Segment>];
+      </Sui.Segment>*/];
   }
 }
 //------------------------------------------------------------------------------

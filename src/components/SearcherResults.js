@@ -2,6 +2,8 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
+import * as PubSub from 'pubsub-js';
+import { LOADING_DONE_TOPIC } from './Searcher';
 import { nullLink, sscat } from '../store';
 import BACKEND_URL, { transform, serializeURIParams } from '../backend';
 //------------------------------------------------------------------------------
@@ -13,16 +15,14 @@ class Piece extends Component {
   }
 
   render() {
-    if( process.env.NODE_ENV === 'development' )
-      console.log('render SearcherResult');
+    // if( process.env.NODE_ENV === 'development' )
+    //   console.log('render SearcherResult');
   
     return <Sui.Message content={this.props.content} />;
   }
 }
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
-//------------------------------------------------------------------------------
-const piece = 10;
 //------------------------------------------------------------------------------
 class SearcherResults extends Component {
   static mapStateToProps(state, ownProps) {
@@ -36,7 +36,13 @@ class SearcherResults extends Component {
     this.index = 0;
     return this;
   }
-  
+
+  emitLoadingDone() {
+    // idea from https://www.andrewhfarmer.com/component-communication/
+    // implementation https://github.com/mroderick/PubSubJS
+    PubSub.publishSync(LOADING_DONE_TOPIC, true);
+  }
+
   loadMoreRows = () => {
     const obj = this;
     const { props } = obj;
@@ -48,7 +54,7 @@ class SearcherResults extends Component {
     // Load the rows
     const rr = {
       type: 'Номенклатура',
-      piece: piece,
+      piece: props.filter.length <= 3 ? 50 : 10,
       index: this.index,
       filter: props.filter
     };
@@ -90,31 +96,41 @@ class SearcherResults extends Component {
       const l = list.length;
       Array.prototype.push.apply(list, transform(json).rows);
 
-      this.index = list.length === 0 || list.length === l ? undefined : list.length;
+      this.index = list.length === l ? undefined : l + rr.piece;
 
       if( this.index !== undefined )
         obj.setState({fetchedRowCount: list.length});
+      else
+        obj.emitLoadingDone();
     })
     .catch(error => {
       if( process.env.NODE_ENV === 'development' )
         console.log(error);
       this.index = undefined;
+      obj.emitLoadingDone();
     });
   }
 
   componentWillMount() {
-    this.initialize().loadMoreRows();
+    this.initialize();
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    if( prevProps.filter !== this.props.filter )
-      this.initialize().setState({fetchedRowCount: 0});
+  componentWillReceiveProps(nextProps) {
+    this.initialize();
+  }
+
+  componentDidMount() {
     this.loadMoreRows();
+  }
+  
+  componentDidUpdate(prevProps, prevState) {
+    if( this.index !== undefined )
+      this.loadMoreRows();
   }
 
   render() {
-    if( process.env.NODE_ENV === 'development' )
-      console.log('render SearcherResults');
+    // if( process.env.NODE_ENV === 'development' )
+    //   console.log('render SearcherResults');
   
     const content = row => sscat(' ', '[' + row.Код + ']', row.Наименование, row.Артикул, row.Производитель);
 

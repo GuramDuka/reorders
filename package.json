@@ -11,17 +11,18 @@
   ],
   "dependencies": {
     "prop-types": "^15.6.0",
+    "pubsub-js": "^1.5.7",
     "react": "^16.0.0",
     "react-dom": "^16.0.0",
     "react-redux": "^5.0.6",
     "react-redux-connect": "^0.1.0",
-    "react-scripts": "1.0.16",
+    "react-scripts": "1.0.17",
     "react-transition-group": "^2.2.1",
     "react-virtualized": "^9.12.0",
     "redux": "^3.7.2",
     "seamless-immutable": "^7.1.2",
     "semantic-ui-css": "^2.2.12",
-    "semantic-ui-react": "^0.75.1",
+    "semantic-ui-react": "^0.76.0",
     "typeface-roboto": "0.0.43"
   },
   "proxy": {
