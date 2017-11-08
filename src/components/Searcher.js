@@ -68,7 +68,6 @@ class Searcher extends Component {
     if( process.env.NODE_ENV === 'development' )
       console.log('render Searcher');
 
-    const { state } = this;
     return <Sui.Input
       style={{marginRight:'1em'}}
       transparent

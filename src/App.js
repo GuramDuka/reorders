@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
-import semanticLogo from './assets/semantic-logo.png'
+//import semanticLogo from './assets/semantic-logo.png'
 import './css/App.css';
 import Header from './components/Header';
 import Body from './components/Body';
