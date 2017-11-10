@@ -16,9 +16,11 @@ class Body extends Component {
       console.log('render Body');
 
     const { props } = this;
-    return [ props.view !== 'products' ? null :
-      <DictListView key={0} path={['products', 'list']} />, props.view !== 'searcherResults' ? null :
-      <SearcherResults key={1} path={['searcher']} parentPath={['products', 'list', 'view']} />];
+    return props.view === 'products' ?
+      <DictListView path={['products', 'list']} /> :
+      props.view === 'searcherResults' ?
+      <SearcherResults path={['searcher']} />
+      : null;
   }
 }
 //------------------------------------------------------------------------------

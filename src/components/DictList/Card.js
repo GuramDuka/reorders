@@ -120,11 +120,33 @@ class Card extends Component {
     const imgUrl = BACKEND_URL + '?'
       + serializeURIParams({r: {m: 'img', u: icoKey}});
     const img = icoKey === nullLink ? null :
-      <Sui.Image floated="left" size="tiny" src={imgUrl} onClick={this.clickImg}/>;
+      <Sui.Image floated="left" size="tiny" src={imgUrl} onClick={this.clickImg} />;
 
-    const prop = expanded && state.props ? state.props.rows.map((row, i) => i !== 0
-       ? [<i key="0">, </i>, <strong key="1">{row.СвойствоПредставление}: </strong>, <i key="2">{row.ЗначениеПредставление}</i>]
-       : [<strong key="0">{row.СвойствоПредставление}: </strong>, <i key="1">{row.ЗначениеПредставление}</i>]) : null;
+    const fprp = rows => {
+      const a = [];
+
+      for( let i = 0; i < rows.length; i++ ) {
+        const row = rows[i];
+
+        if( row.Индекс !== 0 )
+          continue;
+
+        let s = row.ЗначениеПредставление;
+
+        rows.forEach(r => {
+          if( r.Свойство === row.Свойство && r.Индекс !== 0 )
+            s += ', ' + r.ЗначениеПредставление;
+        });
+
+        a.push(
+          <strong key={a.length} style={{color:'black'}}>{row.СвойствоПредставление}: </strong>,
+          <i key={a.length + 1} style={{color:'black'}}>{s + (i + 1 < rows.length ? ';' : '')}</i>
+        );
+      }
+      return a;
+    };
+
+    const prop = expanded && state.props && state.props.rows.length !== 0 ? fprp(state.props.rows) : null;
   
     const desc = expanded && state.desc
       ? state.desc.ДополнительноеОписаниеНоменклатуры
@@ -140,18 +162,18 @@ class Card extends Component {
     const meta = expanded ?
       <Sui.Accordion exclusive={false}>
         <Sui.Accordion.Content active={true}>
-          {[<strong key="0">Код: </strong>, <i key="1">{data.Код}</i>]}
-          {data.Артикул       ? [<i key="2">, </i>, <strong key="6">Артикул: </strong>, <i key="10">{data.Артикул}</i>] : null}
-          {data.Производитель ? [<i key="3">, </i>, <strong key="7">Производитель:</strong>, <i key="11">{data.Производитель}</i>] : null}
-          {data.Остаток       ? [<i key="4">, </i>, <strong key="8">Остаток:</strong>, <i key="12">{data.Остаток}</i>] : null}
-          {data.Цена          ? [<i key="5">, </i>, <strong key="9">Цена:</strong>, <i key="13">{data.Цена + '₽'}</i>] : null}
+          {[<strong key="0" style={{color:'black'}}>Код: </strong>, <i key="1" style={{color:'black'}}>{data.Код}</i>]}
+          {data.Артикул       ? [<strong key="6" style={{color:'black'}}>, Артикул: </strong>, <i key="10" style={{color:'black'}}>{data.Артикул}</i>] : null}
+          {data.Производитель ? [<strong key="7" style={{color:'black'}}>, Производитель:</strong>, <i key="11" style={{color:'black'}}>{data.Производитель}</i>] : null}
+          {data.Остаток       ? [<strong key="8" style={{color:'black'}}>, Остаток:</strong>, <i key="12" style={{color:'black'}}>{data.Остаток}</i>] : null}
+          {data.Цена          ? [<strong key="9" style={{color:'black'}}>, Цена:</strong>, <i key="13" style={{color:'black'}}>{data.Цена + '₽'}</i>] : null}
         </Sui.Accordion.Content>{prop ?
         <Sui.Accordion.Title active={!!activeTitles[1]}
           index={1} idx={1} onClick={clickPropsTitle}>
           <Sui.Label size="small" color="blue">
-            <Sui.Icon name="dropdown" size="large" color="black" />
+            <Sui.Icon name="dropdown" size="large" />
             Свойства
-            <Sui.Label.Detail>{state.props && state.props.rows ? state.props.rows.length : ''}</Sui.Label.Detail>
+            <Sui.Label.Detail>{state.props.rows.length}</Sui.Label.Detail>
           </Sui.Label>
         </Sui.Accordion.Title> : null}{prop ?
         <Sui.Accordion.Content active={!!activeTitles[1]}>
@@ -159,13 +181,13 @@ class Card extends Component {
         </Sui.Accordion.Content> : null}{desc.length === 0 ? null :
         <Sui.Accordion.Title active={!!activeTitles[2]} index={2} idx={2} onClick={clickPropsTitle}>
           <Sui.Label size="small" color="blue">
-            <Sui.Icon name="dropdown" size="large" color="black" />
+            <Sui.Icon name="dropdown" size="large" />
             Описание
             <Sui.Label.Detail>{desc.length}</Sui.Label.Detail>
           </Sui.Label>
         </Sui.Accordion.Title>}
         <Sui.Accordion.Content active={!!activeTitles[2]}>
-          <Sui.Container fluid textAlign='justified'>{desc}</Sui.Container>
+          <Sui.Container fluid textAlign="justified" style={{color:'black'}}>{desc}</Sui.Container>
         </Sui.Accordion.Content>
       </Sui.Accordion> : null;
         
@@ -195,12 +217,12 @@ class Card extends Component {
           <Sui.Button compact size="tiny" circular primary expanded={expandedString} onClick={this.toggleCard} icon="compress" />}
           <Sui.Button compact basic size="small" color="blue" content="В корзину" icon="shop" labelPosition="left" />
         </Sui.Card.Content> : null}{expanded ?
-        <Sui.Modal dimmer="blurring" open={this.state.isImgLargeViewOpen} onClose={this.close}>
+        <Sui.Modal dimmer="blurring" open={this.state.isImgLargeViewOpen} onClose={this.closeImgLargeView}>
           <Sui.Modal.Content image>
             <Sui.Image wrapped fluid src={imgUrl} />
           </Sui.Modal.Content>
           <Sui.Modal.Actions>
-            <Sui.Button icon='checkmark' labelPosition='right' content="Закрыть" onClick={this.closeImgLargeView} />
+            <Sui.Button icon="checkmark" labelPosition="right" content="Закрыть" onClick={this.closeImgLargeView} />
           </Sui.Modal.Actions>
         </Sui.Modal> : null}
       </Sui.Card>);
