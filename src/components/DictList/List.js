@@ -2,6 +2,8 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
+import * as PubSub from 'pubsub-js';
+import { LOADING_START_TOPIC, LOADING_DONE_TOPIC } from '../Searcher';
 import disp, { copy } from '../../store';
 import BACKEND_URL, { transform, serializeURIParams } from '../../backend';
 import Groups from './Groups';
@@ -23,6 +25,7 @@ class List extends Component {
   reload = (options) => {
     const obj = this;
     const { path } = this.props;
+    PubSub.publishSync(LOADING_START_TOPIC, 0);
     return state => {
       let view = state.getIn(path, 'view');
       
@@ -82,6 +85,8 @@ class List extends Component {
 
           if( options && options.onDone && options.onDone.constructor === Function )
             state = options.onDone(state);
+          
+          PubSub.publish(LOADING_DONE_TOPIC, 0);
 
           return state;
         });
@@ -96,6 +101,7 @@ class List extends Component {
         disp(state => {
           if( options && options.onError && options.onError.constructor === Function )
               state = options.onError(state);
+          PubSub.publish(LOADING_DONE_TOPIC, 0);
           return state;
         });
       });
@@ -104,10 +110,20 @@ class List extends Component {
     };
   };
   
-  componentWillMount() {
+  restoreScrollPosition = () => {
+    const { scroll } = this.props;
+    window.scroll(scroll ? scroll.x : 0, scroll ? scroll.y : 0);
+  };
+  
+  componentDidMount() {
     disp(this.reload(), true);
+    this.restoreScrollPosition();
   }
-
+  
+  // componentDidUpdate(prevProps, prevState) {
+  //   this.restoreScrollPosition();
+  // }
+  
   render() {
     if( process.env.NODE_ENV === 'development' )
       console.log('render List');
@@ -115,24 +131,23 @@ class List extends Component {
     const { props, state } = this;
     const { path, view } = props;
 
-    return (
-    <Sui.Segment vertical style={{padding: 0}}>
-      <Groups
+    return [
+      <Groups key={0}
         path={[...path, 'groups', view.parent]}
         listPath={path}
         parent={view.parent}
         breadcrumb={props.breadcrumb}
         listReloader={this.reload}
-        data={state.grps} />
-      <Sui.Segment style={{padding: 0, margin: 0}}>
+        data={state.grps} />,
+      <Sui.Segment key={1}
+        style={{padding: 0, margin: 0}}>
         {state.rows.map((row) =>
           <Card
             key={row.Ссылка}
             link={row.Ссылка}
             path={[...path, 'cards', row.Ссылка]}
             data={row} />)}
-        </Sui.Segment>
-      </Sui.Segment>);
+        </Sui.Segment>];
   }
 }
 //------------------------------------------------------------------------------

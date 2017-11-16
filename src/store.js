@@ -94,6 +94,7 @@ class State {
         if (process.env.NODE_ENV === 'development')
           if (next === undefined)
             throw new Error('path key must have String or Number type');
+        this.mutated.set(next, true);
       }
 
       if (next === undefined)

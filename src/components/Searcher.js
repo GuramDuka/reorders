@@ -3,7 +3,8 @@ import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import * as PubSub from 'pubsub-js';
-import disp, { nullLink, copy } from '../store';
+import disp, { nullLink } from '../store';
+import { scrollXY } from '../util';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -30,6 +31,7 @@ class Icon extends Component {
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
+export const LOADING_START_TOPIC = 'LOADING.START';
 export const LOADING_DONE_TOPIC = 'LOADING.DONE';
 //------------------------------------------------------------------------------
 class Searcher extends Component {
@@ -37,42 +39,47 @@ class Searcher extends Component {
     return state.mapIn(ownProps.path);
   }
 
-  searchChanged = value => {
-    const obj = this;
-    obj.icon.setState({isLoading: true, loadedRows: 0});
-    disp(state => {
-      let stack = state.getIn('body', 'viewStack');
-      let curView = stack[stack.length - 1].view;
-      const sr = 'searcherResults';
-      
-      if( curView !== sr && value.length !== 0 ) {
-        state = state.editIn('body', 'viewStack', v => v.push({
-          searcher: copy(state.getIn('searcher')),
-          view: sr
-        })).setIn('body', 'view', sr);
-        stack = state.getIn('body', 'viewStack');
-        curView = stack[stack.length - 1].view;
-      }
+  searchChanged = value => disp(state => {
+    const sr = 'searcherResults';
+    let stack, curView, nsr = false;
 
-      if( curView === sr && value.length === 0 ) {
-        state = state.editIn('body', 'viewStack', v => v.pop());
-        stack = state.getIn('body', 'viewStack');
-        curView = stack[stack.length - 1].view;
-        state = state.setIn('body', 'view', curView)
-          .deleteIn([], 'searcher');
-        obj.icon.setState({isLoading: false, loadedRows: 0});
-      }
+    for(;;) {
+      stack = state.getIn('body', 'viewStack');
+      curView = stack[stack.length - 1].view;
+      if( curView === sr || stack.length <= 1 || stack.findIndex(v => v.view === sr) < 0 )
+        break;
+      state = state.editIn('body', 'viewStack', v => v.pop());
+    }
+    
+    if( curView !== sr && value.length !== 0 ) {
+      state = state.editIn('body', 'viewStack', v => v.push({view: sr}));
+      stack = state.getIn('body', 'viewStack');
+      curView = stack[stack.length - 1].view;
+      nsr = true;
+    }
 
-      const preView = stack.length >= 2 ? stack[stack.length - 2].view : undefined;
+    if( curView === sr && value.length === 0 ) {
+      state = state.editIn('body', 'viewStack', v => v.pop());
+      stack = state.getIn('body', 'viewStack');
+      const st = stack[stack.length - 1];
+      state = state.setIn('body', 'view', curView = st.view)
+        .deleteIn([], 'searcher');
+    }
 
-      if( curView === sr ) {
-        if( preView === 'products' )
-          state = state.setIn('searcher', 'parent', state.getIn(['products', 'list', 'view'], 'parent', nullLink));
-        state = state.setIn('searcher', 'filter', value);
+    const preView = stack.length >= 2 ? stack[stack.length - 2].view : undefined;
+
+    if( curView === sr ) {
+      if( preView === 'products' ) {
+        state = state.setIn('searcher', 'parent', state.getIn(['products', 'list', 'view'], 'parent', nullLink))
+        if( nsr )
+          state = state.setIn(['products', 'list'], 'scroll', scrollXY());
       }
-      return state;
-    });
-  };
+      state = state.setIn('body', 'view', sr)
+        .setIn('searcher', 'filter', value)
+        .deleteIn('searcher', 'scroll');
+    }
+    return state;
+  });
 
   handleSearchChange = (e, data) => {
     clearTimeout(this.timeoutId);
@@ -89,10 +96,12 @@ class Searcher extends Component {
   }
 
   componentDidMount() {
+    PubSub.subscribe(LOADING_START_TOPIC, (msg, data) => this.icon.setState({isLoading: true, loadedRows: data}));
     PubSub.subscribe(LOADING_DONE_TOPIC, (msg, data) => this.icon.setState({isLoading: false, loadedRows: data}));
   }
   
   componentWillUnmount() {
+    PubSub.unsubscribe(LOADING_START_TOPIC);
     PubSub.unsubscribe(LOADING_DONE_TOPIC);
   }
   
@@ -101,7 +110,6 @@ class Searcher extends Component {
       console.log('render Searcher');
 
     return <Sui.Input
-      style={{marginRight:'1em'}}
       transparent
       icon={<Icon isLoading={this.value.length !== 0} ref={e => this.icon = e} />}
       placeholder="Поиск..."

@@ -4,6 +4,7 @@ import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import disp from '../store';
 import Searcher from './Searcher';
+import Categories from './Categories';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -41,76 +42,23 @@ class Header extends Component {
     if( process.env.NODE_ENV === 'development' )
       console.log('render Header');
 
-    return (
-    <Sui.Menu fixed='top'>
-      <Sui.Dropdown item icon='wrench' simple>
+    const { path } = this.props;
+
+    return <Sui.Menu attached="top">
+      <Sui.Dropdown item icon="wrench" simple>
         <Sui.Dropdown.Menu>
-          <Sui.Dropdown.Item>
-            <Sui.Icon name='dropdown' />
-            <span className='text'>New</span>
-            <Sui.Dropdown.Menu>
-              <Sui.Dropdown.Item>Document</Sui.Dropdown.Item>
-              <Sui.Dropdown.Item>Image</Sui.Dropdown.Item>
-            </Sui.Dropdown.Menu>
-          </Sui.Dropdown.Item>
-          <Sui.Dropdown.Item>Open</Sui.Dropdown.Item>
-          <Sui.Dropdown.Item>Save...</Sui.Dropdown.Item>
-          <Sui.Dropdown.Item>Edit Permissions</Sui.Dropdown.Item>
-          <Sui.Dropdown.Divider />
-          <Sui.Dropdown.Header>Export</Sui.Dropdown.Header>
-          <Sui.Dropdown.Item>Share</Sui.Dropdown.Item>
+          <Sui.Dropdown.Item>Каталог</Sui.Dropdown.Item>
+          <Sui.Dropdown.Item>Корзина</Sui.Dropdown.Item>
+          <Sui.Dropdown.Item>Заказы</Sui.Dropdown.Item>
         </Sui.Dropdown.Menu>
       </Sui.Dropdown>
 
-      <Sui.Dropdown item text='Каталог'>
-        <Sui.Dropdown.Menu> 
-          <Sui.Dropdown.Item>Шины</Sui.Dropdown.Item>
-          <Sui.Dropdown.Item>Диски</Sui.Dropdown.Item>
-          <Sui.Dropdown.Item>АКБ</Sui.Dropdown.Item>
-          <Sui.Dropdown.Divider />
-          <Sui.Dropdown.Item>Масла</Sui.Dropdown.Item>
-          <Sui.Dropdown.Item>Масла2</Sui.Dropdown.Item>
-        </Sui.Dropdown.Menu>
-      </Sui.Dropdown>
+      <Categories path={[...path, 'categories']} />
 
-      <Sui.Menu.Menu position='right'>
-        <Searcher path={[...this.props.path, 'searcher']} />
+      <Sui.Menu.Menu position="right">
+        <Searcher path={[...path, 'searcher']} />
       </Sui.Menu.Menu>
-    </Sui.Menu>
-    
-      /*<Bui.Navbar id={[...props.path, 'navbar'].join('/')} className="fixed-top p-1 bg-white"
-        color="faded" light
-        style={{justifyContent: 'start'}}>
-        <Bui.NavbarToggler onClick={props.toggleNavbar} />
-        <Bui.NavbarBrand href="#" className="ml-1">Шинторг</Bui.NavbarBrand>
-        <Bui.Input type="text" placeholder="Поиск..." style={{maxWidth:'45%'}} />
-        <Bui.Collapse isOpen={!props.collapsed} navbar>
-          <Bui.Nav navbar>
-            <Bui.NavItem>
-              <Bui.Breadcrumb>{props.productsTreePath.map((v, k, a) =>
-                <Bui.BreadcrumbItem
-                  active={k + 1 !== a.length}
-                  tag={k + 1 === a.length ? 'span' : 'a'}
-                  href="#" level={k} onClick={props.changeProductsGroup}
-                  key={v.key}>
-                  {v.name}
-                </Bui.BreadcrumbItem>)}
-              </Bui.Breadcrumb>
-            </Bui.NavItem>
-            <Bui.NavItem>
-              <Bui.Breadcrumb>{props.customersTreePath.map((v, k, a) =>
-                <Bui.BreadcrumbItem
-                  active={k + 1 !== a.length}
-                  tag={k + 1 === a.length ? 'span' : 'a'}
-                  href="#" level={k} onClick={props.changeCustomersGroup}
-                  key={v.key}>
-                  {v.name}
-                </Bui.BreadcrumbItem>)}
-              </Bui.Breadcrumb>
-            </Bui.NavItem>
-          </Bui.Nav>
-        </Bui.Collapse>
-        </Bui.Navbar>*/);
+    </Sui.Menu>;
   }
 }
 //------------------------------------------------------------------------------

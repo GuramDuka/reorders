@@ -3,8 +3,9 @@ import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import * as PubSub from 'pubsub-js';
-import { LOADING_DONE_TOPIC } from './Searcher';
-import { nullLink, sscat } from '../store';
+import { LOADING_START_TOPIC, LOADING_DONE_TOPIC } from './Searcher';
+import disp, { nullLink, sscat } from '../store';
+import { scrollXY } from '../util';
 import nopic from '../assets/nopic.svg';
 import amount from '../assets/amount.svg';
 import price from '../assets/price.svg';
@@ -13,29 +14,12 @@ import BACKEND_URL, { transform, serializeURIParams } from '../backend';
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
 class Piece extends Component {
-  shouldComponentUpdate() {
-    return false;
-  }
-
-  clickImg = e => this.setState({isImgLargeViewOpen: true});
-  closeImgLargeView = e => this.setState({isImgLargeViewOpen: false});
-
-  imgLargeView = imgUrl =>
-    <Sui.Modal dimmer="blurring" open={this.state.isImgLargeViewOpen} onClose={this.closeImgLargeView}>
-      <Sui.Modal.Content image>
-        <Sui.Image wrapped fluid src={imgUrl} />
-      </Sui.Modal.Content>
-      <Sui.Modal.Actions>
-        <Sui.Button icon="checkmark" labelPosition="right" content="Закрыть" onClick={this.closeImgLargeView} />
-      </Sui.Modal.Actions>
-    </Sui.Modal>;
-
   ico = row => {
     if( row ) {
       const icoUrl = row.ОсновноеИзображение && row.ОсновноеИзображение !== nullLink
         ? BACKEND_URL + '?' + serializeURIParams({r: {m: 'img', f: 'ico', u: row.ОсновноеИзображение, w: 128, h: 128, cs: 32}})
         : nopic;
-      return <Sui.Image src={icoUrl} style={{display:'block',margin:'auto',maxHeight:128}} onClick={this.clickImg} />;
+      return <Sui.Image src={icoUrl} style={{display:'block',margin:'auto',maxHeight:128}} />;
     }
     return null;
   };
@@ -57,33 +41,57 @@ class Piece extends Component {
       </Sui.Label>
     </Sui.Label.Group> : null;
 
+  handleClick = (link, data) => disp(state => {
+    const stack = state.getIn('body', 'viewStack');
+    const curView = stack[stack.length - 1].view;
+    const preView = stack.length >= 2 ? stack[stack.length - 2].view : undefined;
+    
+    if( curView === 'searcherResults' )
+      if( preView === 'products' ) {
+        const cardPath = ['searcher', 'cards', link];
+        state = state.editIn('body', 'viewStack', v => v.push({
+          view: 'card',
+          link: link
+        })).setIn('body', 'view', 'card')
+        .setIn('searcher', 'scroll', scrollXY())
+        .setIn(cardPath, 'data', data)
+        .setIn(cardPath, 'expanded', true);
+      }
+    return state;
+  });
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return false;
+  }
+  
   render() {
-    // if( process.env.NODE_ENV === 'development' )
-    //   console.log('render SearcherResult');
+    //  if( process.env.NODE_ENV === 'development' )
+    //    console.log('render SearcherResult');
+
     const { r0, r1 } = this.props;
 
     return <Sui.Grid columns="2" divided style={{margin:0,padding:0}}>
       <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
-        <Sui.Grid.Column>
+        <Sui.Grid.Column onClick={e => this.handleClick(r0.Ссылка, r0)}>
           {this.ico(r0)}
         </Sui.Grid.Column>
-        <Sui.Grid.Column>
+        <Sui.Grid.Column onClick={e => this.handleClick(r1.Ссылка, r1)}>
           {this.ico(r1)}
         </Sui.Grid.Column>
       </Sui.Grid.Row>
       <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
-        <Sui.Grid.Column textAlign="center">
+        <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(r0.Ссылка, r0)}>
           {this.content(r0)}
         </Sui.Grid.Column>
-        <Sui.Grid.Column textAlign="center">
+        <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(r1.Ссылка, r1)}>
           {this.content(r1)}
         </Sui.Grid.Column>
       </Sui.Grid.Row>
       <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
-        <Sui.Grid.Column textAlign="center">
+        <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(r0.Ссылка, r0)}>
           {this.extraContent(r0)}
         </Sui.Grid.Column>
-        <Sui.Grid.Column textAlign="center">
+        <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(r1.Ссылка, r1)}>
           {this.extraContent(r1)}
         </Sui.Grid.Column>
       </Sui.Grid.Row>
@@ -108,6 +116,10 @@ class SearcherResults extends Component {
     return this;
   }
 
+  emitStartDone() {
+    PubSub.publishSync(LOADING_START_TOPIC, 0);
+  }
+
   emitLoadingDone() {
     // idea from https://www.andrewhfarmer.com/component-communication/
     // implementation https://github.com/mroderick/PubSubJS
@@ -121,6 +133,9 @@ class SearcherResults extends Component {
     // no more rows
     if( this.index === undefined )
       return;
+
+    if( this.index === 0 )
+      this.emitStartDone();
 
     // Load the rows
     const rr = {
@@ -179,7 +194,12 @@ class SearcherResults extends Component {
       this.index = undefined;
       obj.emitLoadingDone();
     });
-  }
+  };
+
+  restoreScrollPosition = () => {
+    const { scroll } = this.props;
+    window.scroll(scroll ? scroll.x : 0, scroll ? scroll.y : 0);
+  };
 
   componentWillMount() {
     this.initialize();
@@ -191,11 +211,13 @@ class SearcherResults extends Component {
 
   componentDidMount() {
     this.loadMoreRows();
+    this.restoreScrollPosition();
   }
   
   componentDidUpdate(prevProps, prevState) {
     if( this.index !== undefined )
       this.loadMoreRows();
+    this.restoreScrollPosition();
   }
 
   render() {
@@ -207,7 +229,7 @@ class SearcherResults extends Component {
     for( let i = 0; i < list.length; i += 2 ) {
       const idx = offs + i;
       if( idx % 2 === 0 ) {
-        const k = (idx/2).toString();
+        const k = (idx / 2).toString();
         if( rend.length !== 0 )
           rend.push(<Sui.Divider key={'d' + k} fitted />);
         rend.push(<Piece key={'p' + k} r0={list[i]} r1={list[i+1]} />);
