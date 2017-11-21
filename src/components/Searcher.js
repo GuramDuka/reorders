@@ -19,13 +19,13 @@ class Icon extends Component {
 
     const { state } = this;
 
-    return <Sui.Icon
-      loading={state.isLoading}
-      name={state.isLoading ? 'spinner' : 'search'}>
-        <font style={{fontSize:'50%'}}>
-          {~~state.loadedRows === 0 ? '' : state.loadedRows}
-        </font>
-      </Sui.Icon>;
+    if( process.env.NODE_ENV === 'development' )
+      return [~~state.loadedRows === 0 ? null :
+        <span key={0} style={{fontSize:'60%'}}>{state.loadedRows}</span>,
+        <Sui.Icon key={1} loading={state.isLoading}
+          name={state.isLoading ? 'spinner' : 'search'} />];
+    return <Sui.Icon loading={state.isLoading}
+      name={state.isLoading ? 'spinner' : 'search'} />;
   }
 };
 //------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ class Searcher extends Component {
       nsr = true;
     }
 
-    if( curView === sr && value.length === 0 ) {
+    if( curView === sr && value.length === 0 && !state.getIn('searcher', 'category') ) {
       state = state.editIn('body', 'viewStack', v => v.pop());
       stack = state.getIn('body', 'viewStack');
       const st = stack[stack.length - 1];

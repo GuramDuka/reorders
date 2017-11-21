@@ -43,19 +43,29 @@ class Header extends Component {
       console.log('render Header');
 
     const { path } = this.props;
-
-    return <Sui.Menu attached="top">
-      <Sui.Dropdown item icon="wrench" simple>
+    
+    return <Sui.Menu attached="top" style={{left: 0, top: 0, height: 44, position: 'fixed', zIndex: 1000 }}>
+      <Sui.Dropdown item icon="bars" simple compact>
         <Sui.Dropdown.Menu>
-          <Sui.Dropdown.Item>Каталог</Sui.Dropdown.Item>
-          <Sui.Dropdown.Item>Корзина</Sui.Dropdown.Item>
-          <Sui.Dropdown.Item>Заказы</Sui.Dropdown.Item>
+          <Sui.Dropdown.Item>
+            <i className="dropdown icon" />
+            <span className="text">Сортировка</span>
+            <Sui.Dropdown.Menu>
+              <Sui.Dropdown.Item>Код<Sui.Icon name="sort descending" /></Sui.Dropdown.Item>
+              <Sui.Dropdown.Item>Наименование<Sui.Icon name="sort ascending" /></Sui.Dropdown.Item>
+              <Sui.Dropdown.Item>Цена<Sui.Icon name="sort descending" /></Sui.Dropdown.Item>
+            </Sui.Dropdown.Menu>
+          </Sui.Dropdown.Item>
+          <Sui.Dropdown.Divider />
+          <Sui.Dropdown.Item text="Каталог" />
+          <Sui.Dropdown.Item text="Корзина" />
+          <Sui.Dropdown.Item text="Заказы" />
         </Sui.Dropdown.Menu>
       </Sui.Dropdown>
 
       <Categories path={[...path, 'categories']} />
 
-      <Sui.Menu.Menu position="right">
+      <Sui.Menu.Menu>
         <Searcher path={[...path, 'searcher']} />
       </Sui.Menu.Menu>
     </Sui.Menu>;

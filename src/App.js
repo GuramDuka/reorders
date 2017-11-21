@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
+import * as Sui from 'semantic-ui-react';
 //import semanticLogo from './assets/semantic-logo.png'
 import './css/App.css';
 import Header from './components/Header';
@@ -31,25 +32,26 @@ class App extends Component {
   //   //this.setState({ headerNavbarHeight: navbar.offsetHeight });
   // }
 
-  // handleScroll = e => {
-  //   const supportPageOffset = window.pageXOffset !== undefined;
-  //   const isCSS1Compat = ((document.compatMode || '') === 'CSS1Compat');
+  handleScroll = e => {
+     console.log(e);
+  };
 
-  //   const x = supportPageOffset ? window.pageXOffset : isCSS1Compat ? document.documentElement.scrollLeft : document.body.scrollLeft;
-  //   const y = supportPageOffset ? window.pageYOffset : isCSS1Compat ? document.documentElement.scrollTop : document.body.scrollTop;
-  //   console.log(x, y);
-  // };
+  handleTouchmove = e => {
+    console.log(e);
+  };
+  
+  componentDidMount() {
+  //  window.addEventListener('resize', this.handleResize);
+  //  this.handleResize();
+  //  window.addEventListener('scroll', this.handleScroll);
+  //  window.addEventListener('touchmove', this.handleTouchmove);
+  }
 
-  // componentDidMount() {
-  //   window.addEventListener('resize', this.handleResize);
-  //   this.handleResize();
-  //   window.addEventListener('scroll', this.handleScroll);
-  // }
-
-  // componentWillUnmount() {
-  //   window.removeEventListener('resize', this.handleResize);
-  //   window.removeEventListener('scroll', this.handleScroll);
-  // }
+  componentWillUnmount() {
+  //  window.removeEventListener('resize', this.handleResize);
+  //  window.removeEventListener('scroll', this.handleScroll);
+  //  window.removeEventListener('touchmove', this.handleTouchmove);
+  }
 
   render() {
     if( process.env.NODE_ENV === 'development' )
@@ -58,9 +60,10 @@ class App extends Component {
     return [
       <Header key={0} path={['header']} />,
 
-      /*<Sui.Segment key={1} vertical style={{margin:0,padding:0}}>*/
-        <Body path={['body']} />
-      /*</Sui.Segment>,
+      <Sui.Segment key={1} vertical style={{margin:0,height:44,padding:0}}>
+      </Sui.Segment>,
+
+      <Body key={2} path={['body']} />/*,
         
       <Sui.Segment key={2} vertical>
         <Sui.Container textAlign="center">

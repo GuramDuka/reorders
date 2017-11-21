@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import DictListView from './DictList/List';
-import DictCard from './DictList/Card';
 import SearcherResults from './SearcherResults';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
@@ -27,14 +26,8 @@ class Body extends Component {
         return <DictListView path={['products', 'list']} />;
       case 'searcherResults' :
         return <Sui.Segment style={{padding: 0, margin: 0}}>
-         <SearcherResults path={['searcher']} />
+          <SearcherResults path={['searcher']} />
          </Sui.Segment>;
-      case 'card' :
-        const stack = props.body.viewStack;
-        const { link } = stack[stack.length - 1];
-        return <DictCard link={link} stacked={true}
-          path={['searcher', 'cards', link]}
-          data={props.searcher.cards[link].data} />;
       default:;
     }
 

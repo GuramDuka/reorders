@@ -5,7 +5,6 @@ import * as Sui from 'semantic-ui-react';
 import disp, { nullLink, sscat } from '../../store';
 import * as PubSub from 'pubsub-js';
 import { LOADING_DONE_TOPIC } from '../Searcher';
-import { scrollXY } from '../../util';
 import BACKEND_URL, { transform, serializeURIParams } from '../../backend';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,36 +98,18 @@ class Card extends Component {
   
   clickImg = () => this.setState({ isImgLargeViewOpen: true });
   closeImgLargeView = () => this.setState({isImgLargeViewOpen: false});
+  closeCard = e => this.props.closeCardHandler && this.props.closeCardHandler(e);
 
-  closeCard = e => {
-    if( this.props.stacked ) disp(state => {
-      let stack = state.getIn('body', 'viewStack');
-      state = state.editIn('body', 'viewStack', v => v.pop());
-      stack = state.getIn('body', 'viewStack');
-      return state.setIn('body', 'view', stack[stack.length - 1].view)
-        .setIn(this.props.path, 'scroll', scrollXY());
-    });
-  };
-
-  restoreScrollPosition = () => {
-    if( this.props.stacked ) {
-      const { scroll } = this.props;
-      window.scroll(scroll ? scroll.x : 0, scroll ? scroll.y : 0);
-    }
-  };
-  
   componentWillMount() {
     if( this.props.expanded && this.state.props === undefined )
       disp(this.reload(), true);
   }
   
   componentDidMount() {
-    this.restoreScrollPosition();
     PubSub.publishSync(LOADING_DONE_TOPIC, 0);
   }
   
   componentDidUpdate(prevProps, prevState) {
-    this.restoreScrollPosition();
   }
   
   render() {
@@ -242,11 +223,11 @@ class Card extends Component {
           </Sui.Card.Meta> : null}
         </Sui.Card.Content>{expanded ?
         <Sui.Card.Content extra style={{padding: '.25em'}}>{state.isLoading ? <Sui.Loader active inline size="small" /> :
-          props.stacked
+          props.closeCardHandler
             ? <Sui.Button compact basic size="small" color="blue" onClick={this.closeCard} icon="close" content="Закрыть" labelPosition="left" />
             : <Sui.Button compact size="tiny" circular primary expanded={expandedString} onClick={this.toggleCard} icon="compress" />
-          }
-          <Sui.Button compact basic size="small" color="blue" content="В корзину" icon="shop" labelPosition="left" />
+          }{state.isLoading ? null :
+          <Sui.Button compact basic size="small" color="blue" content="В корзину" icon="shop" labelPosition="left" />}
         </Sui.Card.Content> : null}{expanded ?
         <Sui.Modal dimmer="blurring" open={this.state.isImgLargeViewOpen} onClose={this.closeImgLargeView}>
           <Sui.Modal.Content image>

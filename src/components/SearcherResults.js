@@ -4,8 +4,8 @@ import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import * as PubSub from 'pubsub-js';
 import { LOADING_START_TOPIC, LOADING_DONE_TOPIC } from './Searcher';
-import disp, { nullLink, sscat } from '../store';
-import { scrollXY } from '../util';
+import { nullLink, sscat } from '../store';
+import Card from './DictList/Card';
 import nopic from '../assets/nopic.svg';
 import amount from '../assets/amount.svg';
 import price from '../assets/price.svg';
@@ -41,61 +41,119 @@ class Piece extends Component {
       </Sui.Label>
     </Sui.Label.Group> : null;
 
-  handleClick = (link, data) => disp(state => {
-    const stack = state.getIn('body', 'viewStack');
-    const curView = stack[stack.length - 1].view;
-    const preView = stack.length >= 2 ? stack[stack.length - 2].view : undefined;
-    
-    if( curView === 'searcherResults' )
-      if( preView === 'products' ) {
-        const cardPath = ['searcher', 'cards', link];
-        state = state.editIn('body', 'viewStack', v => v.push({
-          view: 'card',
-          link: link
-        })).setIn('body', 'view', 'card')
-        .setIn('searcher', 'scroll', scrollXY())
-        .setIn(cardPath, 'data', data)
-        .setIn(cardPath, 'expanded', true);
-      }
-    return state;
-  });
+  handleClick = i => this.setState({expanded: 'r' + i});
+
+  grid = (r0, r1) => <Sui.Grid columns="2" divided style={{margin:0,padding:0}}>
+    <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
+      <Sui.Grid.Column onClick={e => this.handleClick(0)}>
+        {this.ico(r0)}
+      </Sui.Grid.Column>
+      <Sui.Grid.Column onClick={e => this.handleClick(1)}>
+        {this.ico(r1)}
+      </Sui.Grid.Column>
+    </Sui.Grid.Row>
+    <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
+      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(0)}>
+        {this.content(r0)}
+      </Sui.Grid.Column>
+      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(1)}>
+        {this.content(r1)}
+      </Sui.Grid.Column>
+    </Sui.Grid.Row>
+    <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
+      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(0)}>
+        {this.extraContent(r0)}
+      </Sui.Grid.Column>
+      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(1)}>
+        {this.extraContent(r1)}
+      </Sui.Grid.Column>
+    </Sui.Grid.Row>
+  </Sui.Grid>;
+
+  closeCardHandler = e => this.setState({expanded: undefined});
+
+  card = r => <Card
+    expanded
+    key={r.Ссылка}
+    link={r.Ссылка}
+    path={['products', 'list', 'cards', r.Ссылка]}
+    data={r}
+    closeCardHandler={this.closeCardHandler} />;
 
   shouldComponentUpdate(nextProps, nextState) {
-    return false;
+    return this.state.expanded !== nextState.expanded;
   }
   
+  state = {};
+
   render() {
     //  if( process.env.NODE_ENV === 'development' )
     //    console.log('render SearcherResult');
 
-    const { r0, r1 } = this.props;
+    const { props, state } = this;
 
-    return <Sui.Grid columns="2" divided style={{margin:0,padding:0}}>
-      <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
-        <Sui.Grid.Column onClick={e => this.handleClick(r0.Ссылка, r0)}>
-          {this.ico(r0)}
-        </Sui.Grid.Column>
-        <Sui.Grid.Column onClick={e => this.handleClick(r1.Ссылка, r1)}>
-          {this.ico(r1)}
-        </Sui.Grid.Column>
-      </Sui.Grid.Row>
-      <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
-        <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(r0.Ссылка, r0)}>
-          {this.content(r0)}
-        </Sui.Grid.Column>
-        <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(r1.Ссылка, r1)}>
-          {this.content(r1)}
-        </Sui.Grid.Column>
-      </Sui.Grid.Row>
-      <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
-        <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(r0.Ссылка, r0)}>
-          {this.extraContent(r0)}
-        </Sui.Grid.Column>
-        <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(r1.Ссылка, r1)}>
-          {this.extraContent(r1)}
-        </Sui.Grid.Column>
-      </Sui.Grid.Row>
-    </Sui.Grid>;
+    if( state.expanded !== undefined )
+      return this.card(props[state.expanded]);
+
+    return this.grid(props.r0, props.r1);
+  }
+}
+//------------------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
+class BottomSegment extends Component {
+  id = (() => {
+   	const a = new Uint32Array(3);
+   	window.crypto.getRandomValues(a);
+   	return a[0].toString() + a[1].toString() + a[2].toString();
+  })();
+
+  // isScrolledIntoView(elem) {
+  //   var docViewTop = $(window).scrollTop();
+  //   var docViewBottom = docViewTop + $(window).height();
+  //   var elemTop = $(elem).offset().top;
+  //   return ((elemTop <= docViewBottom) && (elemTop >= docViewTop));
+  //   return (docViewBottom >= elemTop && docViewTop <= elemBottom);
+  // }
+
+  isScrolledIntoView = elem => {
+    const r = elem.getBoundingClientRect();
+    // Only completely visible elements return true:
+    // return r.top >= 0 && r.bottom <= window.innerHeight;
+    // Partially visible elements return true:
+    return r.top < window.innerHeight && r.bottom >= 0;
+  };
+
+  removeListeners = () => {
+    window.removeEventListener('scroll', this.isAppear);
+    window.removeEventListener('touchmove', this.isAppear);
+  };
+
+  isAppear = e => {
+    if( this.isScrolledIntoView(document.getElementById(this.id)) ) {
+      this.removeListeners();
+      this.props.appear();
+    }
+  };
+
+  componentDidMount() {
+    window.addEventListener('scroll', this.isAppear);
+    window.addEventListener('touchmove', this.isAppear);
+  }
+  
+  componentWillUnmount() {
+    this.removeListeners();
+  }
+
+  state = { isLoading: false };
+
+  render() {
+    // if( process.env.NODE_ENV === 'development' )
+    //   console.log('render BottomSegment');
+
+    return <Sui.Segment vertical basic id={this.id}>
+        <Sui.Loader active={this.state.isLoading} />
+      </Sui.Segment>;
   }
 }
 //------------------------------------------------------------------------------
@@ -116,8 +174,8 @@ class SearcherResults extends Component {
     return this;
   }
 
-  emitStartDone() {
-    PubSub.publishSync(LOADING_START_TOPIC, 0);
+  emitLoading() {
+    PubSub.publishSync(LOADING_START_TOPIC, this.offs + this.list.length);
   }
 
   emitLoadingDone() {
@@ -131,23 +189,34 @@ class SearcherResults extends Component {
     const { props } = obj;
 
     // no more rows
-    if( this.index === undefined )
+    if( obj.index === undefined )
       return;
 
-    if( this.index === 0 )
-      this.emitStartDone();
+    if( obj.bottomSegment )
+      this.bottomSegment.setState({isLoading: true});
 
+    if( obj.index === 0 )
+      obj.piece = props.category || !props.filter || props.filter.length <= 4 ? 20 : 10;
+
+    if( obj.index === 0 )
+      obj.emitLoading();
+    
     // Load the rows
     const rr = {
       type: 'Номенклатура',
-      piece: props.filter.length <= 4 ? 100 : 50,
-      index: this.index,
-      filter: props.filter
+      piece: obj.piece,
+      index: obj.index
     };
 
+    if( props.filter )
+      rr.filter = props.filter;
+    
     if( props.parent !== nullLink )
       rr.parent = props.parent;
 
+    if( props.category !== undefined )
+      rr.category = props.category;
+      
     const r = {
       m : 'dict',
       f : 'filter',
@@ -178,20 +247,22 @@ class SearcherResults extends Component {
       if( json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array) )
         throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
 
-      this.list = transform(json).rows;
-      this.offs = this.index;
-      this.index = this.list.length < rr.piece ? undefined : this.index + rr.piece;
+      obj.list = transform(json).rows;
+      obj.offs = obj.index;
+      obj.index = obj.list.length < rr.piece ? undefined : obj.index + rr.piece;
 
-      if( this.list.length !== 0 )
-        obj.setState({fetchedRowCount: this.offs + this.list.length});
+      obj.setState({offset: obj.offs});
       
-      if( this.index === undefined )
+      if( obj.offs === 0 || obj.index === undefined )
         obj.emitLoadingDone();
     })
     .catch(error => {
       if( process.env.NODE_ENV === 'development' )
         console.log(error);
-      this.index = undefined;
+      obj.list = [];
+      obj.offs = obj.index;
+      obj.index = undefined;
+      obj.setState({offset: obj.offs});
       obj.emitLoadingDone();
     });
   };
@@ -211,13 +282,13 @@ class SearcherResults extends Component {
 
   componentDidMount() {
     this.loadMoreRows();
-    this.restoreScrollPosition();
+    //this.restoreScrollPosition();
   }
   
   componentDidUpdate(prevProps, prevState) {
-    if( this.index !== undefined )
+    if( this.index === 0 )
       this.loadMoreRows();
-    this.restoreScrollPosition();
+    //this.restoreScrollPosition();
   }
 
   render() {
@@ -226,14 +297,30 @@ class SearcherResults extends Component {
 
     const { rend, list, offs } = this;
 
-    for( let i = 0; i < list.length; i += 2 ) {
+    while( rend.length > 0 ) {
+      const type = rend[rend.length - 1].props.type;
+      if( !type || type.search(/BottomSegment|Divider/g) < 0 ) 
+        break;
+      rend.pop();
+    }
+
+    delete this.bottomSegment;
+    
+    for( let l = rend.length, i = 0; i < list.length; i += 2 ) {
       const idx = offs + i;
       if( idx % 2 === 0 ) {
-        const k = (idx / 2).toString();
-        if( rend.length !== 0 )
-          rend.push(<Sui.Divider key={'d' + k} fitted />);
-        rend.push(<Piece key={'p' + k} r0={list[i]} r1={list[i+1]} />);
+        if( l !== 0 )
+          rend[l++] = <Sui.Divider key={idx} fitted />;
+        rend[l++] = <Piece key={idx+1} r0={list[i]} r1={list[i+1]} />;
       }
+    }
+
+    if( list.length === this.piece ) {
+      rend[rend.length] = <Sui.Divider type="Divider" key={rend.length} fitted />;
+      rend[rend.length] = <BottomSegment type="BottomSegment"
+        key={rend.length}
+        appear={this.loadMoreRows}
+        ref={e => this.bottomSegment = e} />;
     }
 
     return rend;
