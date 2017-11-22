@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
-import disp, { nullLink } from '../store';
+import disp from '../store';
 import BACKEND_URL, { transform, serializeURIParams } from '../backend';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
@@ -29,10 +29,10 @@ class Categories extends Component {
             state = state.editIn('body', 'viewStack', v => v.pop());
           }
           
-          state = state.editIn('body', 'viewStack', v => v.push({view: sr}));
-          state = state.setIn('searcher', 'parent', state.getIn(['products', 'list', 'view'], 'parent', nullLink));
-          state = state.setIn('body', 'view', sr)
+          state = state.editIn('body', 'viewStack', v => v.push({view: sr}))
+            .setIn('body', 'view', sr)
             .setIn('searcher', 'category', category)
+            .deleteIn('searcher', 'parent')
             .deleteIn('searcher', 'scroll')
             .setIn(path, 'category', category);
       

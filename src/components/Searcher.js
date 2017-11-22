@@ -75,8 +75,7 @@ class Searcher extends Component {
           state = state.setIn(['products', 'list'], 'scroll', scrollXY());
       }
       state = state.setIn('body', 'view', sr)
-        .setIn('searcher', 'filter', value)
-        .deleteIn('searcher', 'scroll');
+        .setIn('searcher', 'filter', value);
     }
     return state;
   });

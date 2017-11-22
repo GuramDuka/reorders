@@ -117,12 +117,11 @@ class List extends Component {
   
   componentDidMount() {
     disp(this.reload(), true);
-    this.restoreScrollPosition();
   }
   
-  // componentDidUpdate(prevProps, prevState) {
-  //   this.restoreScrollPosition();
-  // }
+  componentDidUpdate(prevProps, prevState) {
+    this.restoreScrollPosition();
+  }
   
   render() {
     if( process.env.NODE_ENV === 'development' )

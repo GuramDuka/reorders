@@ -117,8 +117,8 @@ class Card extends Component {
     const { expanded, data, clickPropsTitle } = props;
     const activeTitles = Array.isArray(props.activeTitles) ? props.activeTitles : [];
     
-    if( process.env.NODE_ENV === 'development' )
-      console.log('render Card: ' + props.path[props.path.length - 1] + ', isLoading: ' + state.isLoading);
+    // if( process.env.NODE_ENV === 'development' )
+    //   console.log('render Card: ' + props.path[props.path.length - 1] + ', isLoading: ' + state.isLoading);
     
     const icoKey = data.ОсновноеИзображение || nullLink;
     
@@ -229,7 +229,7 @@ class Card extends Component {
           }{state.isLoading ? null :
           <Sui.Button compact basic size="small" color="blue" content="В корзину" icon="shop" labelPosition="left" />}
         </Sui.Card.Content> : null}{expanded ?
-        <Sui.Modal dimmer="blurring" open={this.state.isImgLargeViewOpen} onClose={this.closeImgLargeView}>
+        <Sui.Modal open={this.state.isImgLargeViewOpen} onClose={this.closeImgLargeView}>
           <Sui.Modal.Content image>
             <Sui.Image wrapped fluid src={imgUrl} />
           </Sui.Modal.Content>

@@ -213,6 +213,10 @@ const defaultState = {
       breadcrumb: [{ name: '', link: nullLink }],
       view: {
         type: 'Номенклатура',
+        order: {
+          field: 'Наименование',
+          direction: 'asc'
+        },
         parent: nullLink,
         groups: true,
         elements: true,

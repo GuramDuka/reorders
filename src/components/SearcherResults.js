@@ -7,8 +7,6 @@ import { LOADING_START_TOPIC, LOADING_DONE_TOPIC } from './Searcher';
 import { nullLink, sscat } from '../store';
 import Card from './DictList/Card';
 import nopic from '../assets/nopic.svg';
-import amount from '../assets/amount.svg';
-import price from '../assets/price.svg';
 import BACKEND_URL, { transform, serializeURIParams } from '../backend';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
@@ -19,7 +17,7 @@ class Piece extends Component {
       const icoUrl = row.ОсновноеИзображение && row.ОсновноеИзображение !== nullLink
         ? BACKEND_URL + '?' + serializeURIParams({r: {m: 'img', f: 'ico', u: row.ОсновноеИзображение, w: 128, h: 128, cs: 32}})
         : nopic;
-      return <Sui.Image src={icoUrl} style={{display:'block',margin:'auto',maxHeight:128}} />;
+      return <Sui.Image src={icoUrl} style={{float:'right',display:'block',padding:0,margin:0,maxHeight:128}} />;
     }
     return null;
   };
@@ -27,45 +25,46 @@ class Piece extends Component {
   content = row => row ? sscat(' ', row.Наименование, row.Артикул, row.Производитель) : null;
 
   extraContent = row => row ?
-    <Sui.Label.Group size="mini">
-      <Sui.Label color="orange" style={{marginRight:1,paddingLeft:2,paddingRight:2}}>
-        <strong>{row.Код}</strong>
-      </Sui.Label>
-      <Sui.Label image color="violet" style={{marginRight:1,paddingRight:2}}>
-        <Sui.Image verticalAlign="top" src={amount} />
-        <strong>{row.Остаток}</strong>
-      </Sui.Label>
-      <Sui.Label image color="violet" style={{marginRight:1,paddingRight:2}}>
-        <Sui.Image verticalAlign="top" src={price} />
-        <strong>{row.Цена + '₽'}</strong>
-      </Sui.Label>
-    </Sui.Label.Group> : null;
+    <Sui.List style={{left: 0, top: 0, position: 'absolute', zIndex: 100, marginLeft:1}}>
+      <Sui.List.Item style={{padding:0, margin:0, marginTop:0}}>
+        <Sui.Label size="tiny" color="orange" style={{paddingLeft:1, paddingRight:1}}>
+          <Sui.Icon name="hashtag" style={{marginRight:2}} />
+          <strong>{row.Код}</strong>
+        </Sui.Label>
+      </Sui.List.Item>
+      <Sui.List.Item style={{padding:0, margin:0, marginTop:1}}>
+        <Sui.Label size="tiny" image color="teal" style={{paddingLeft:1, paddingRight:1}}>
+          <Sui.Icon name="rub" style={{marginRight:2}} />
+          <strong>{row.Цена}</strong>
+        </Sui.Label>
+      </Sui.List.Item>
+      <Sui.List.Item style={{padding:0, margin:0, marginTop:1}}>
+        <Sui.Label size="tiny" image color="violet" style={{paddingLeft:1, paddingRight:1}}>
+          <Sui.Icon name="tag" style={{marginRight:2}} />
+          <strong>{row.Остаток}</strong>
+        </Sui.Label>
+      </Sui.List.Item>
+    </Sui.List> : null;
 
   handleClick = i => this.setState({expanded: 'r' + i});
 
   grid = (r0, r1) => <Sui.Grid columns="2" divided style={{margin:0,padding:0}}>
-    <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
-      <Sui.Grid.Column onClick={e => this.handleClick(0)}>
+    <Sui.Grid.Row style={{margin:0,paddingTop:0,paddingBottom:0}}>
+      <Sui.Grid.Column onClick={e => this.handleClick(0)} style={{margin:0,padding:0}}>
+        {this.extraContent(r0)}
         {this.ico(r0)}
       </Sui.Grid.Column>
-      <Sui.Grid.Column onClick={e => this.handleClick(1)}>
+      <Sui.Grid.Column onClick={e => this.handleClick(1)} style={{margin:0,padding:0}}>
+        {this.extraContent(r1)}
         {this.ico(r1)}
       </Sui.Grid.Column>
     </Sui.Grid.Row>
-    <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
-      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(0)}>
+    <Sui.Grid.Row style={{margin:0,paddingTop:0,paddingBottom:0}}>
+      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(0)} style={{margin:0,padding:0}}>
         {this.content(r0)}
       </Sui.Grid.Column>
-      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(1)}>
+      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(1)} style={{margin:0,padding:0}}>
         {this.content(r1)}
-      </Sui.Grid.Column>
-    </Sui.Grid.Row>
-    <Sui.Grid.Row style={{margin:0,paddingTop:'0.0em',paddingBottom:'0.0em'}}>
-      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(0)}>
-        {this.extraContent(r0)}
-      </Sui.Grid.Column>
-      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(1)}>
-        {this.extraContent(r1)}
       </Sui.Grid.Column>
     </Sui.Grid.Row>
   </Sui.Grid>;
@@ -196,7 +195,7 @@ class SearcherResults extends Component {
       this.bottomSegment.setState({isLoading: true});
 
     if( obj.index === 0 )
-      obj.piece = props.category || !props.filter || props.filter.length <= 4 ? 20 : 10;
+      obj.piece = props.category || !props.filter || props.filter.length <= 4 ? 100 : 50;
 
     if( obj.index === 0 )
       obj.emitLoading();
@@ -210,13 +209,12 @@ class SearcherResults extends Component {
 
     if( props.filter )
       rr.filter = props.filter;
-    
-    if( props.parent !== nullLink )
-      rr.parent = props.parent;
 
     if( props.category !== undefined )
       rr.category = props.category;
-      
+    else if( props.parent !== nullLink )
+      rr.parent = props.parent;
+
     const r = {
       m : 'dict',
       f : 'filter',
@@ -305,20 +303,21 @@ class SearcherResults extends Component {
     }
 
     delete this.bottomSegment;
+    let l = rend.length;
     
-    for( let l = rend.length, i = 0; i < list.length; i += 2 ) {
-      const idx = offs + i;
-      if( idx % 2 === 0 ) {
+    for( let i = 0; i < list.length; i += 2 ) {
+      const idx = offs + i / 2;
+      if( i % 2 === 0 ) {
         if( l !== 0 )
-          rend[l++] = <Sui.Divider key={idx} fitted />;
-        rend[l++] = <Piece key={idx+1} r0={list[i]} r1={list[i+1]} />;
+          rend[l++] = <Sui.Divider key={'d'+idx} fitted />;
+        rend[l++] = <Piece key={idx} r0={list[i]} r1={list[i+1]} />;
       }
     }
 
     if( list.length === this.piece ) {
-      rend[rend.length] = <Sui.Divider type="Divider" key={rend.length} fitted />;
-      rend[rend.length] = <BottomSegment type="BottomSegment"
-        key={rend.length}
+      rend[l++] = <Sui.Divider type="Divider" key="lastDivider" fitted />;
+      rend[l++] = <BottomSegment type="BottomSegment"
+        key="lastBS"
         appear={this.loadMoreRows}
         ref={e => this.bottomSegment = e} />;
     }
