@@ -4,7 +4,7 @@ import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 //import semanticLogo from './assets/semantic-logo.png'
 import './css/App.css';
-import Header from './components/Header';
+import Header from './components/Header/Header';
 import Body from './components/Body';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
@@ -14,6 +14,8 @@ class App extends Component {
     return state.mapIn(ownProps.path);
   }
 
+  static connectOptions = { withRef: true };
+  
   // constructor(props, context) {
   //   super(props, context);
   //   this.state = {};

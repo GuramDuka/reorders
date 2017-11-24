@@ -42,6 +42,8 @@ class Categories extends Component {
     };
   }
   
+  static connectOptions = { withRef: true };
+  
   load = () => {
     const obj = this;
     const rr = {

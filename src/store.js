@@ -208,6 +208,12 @@ const defaultState = {
     viewStack: [{ view: 'products' }],
     view: 'products',
   },
+  searcher: {
+    order: {
+      field: 'Наименование',
+      direction: 'asc'
+    }
+  },
   products: {
     list: {
       breadcrumb: [{ name: '', link: nullLink }],

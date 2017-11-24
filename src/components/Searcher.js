@@ -39,9 +39,11 @@ class Searcher extends Component {
     return state.mapIn(ownProps.path);
   }
 
+  static connectOptions = { withRef: true };
+  
   searchChanged = value => disp(state => {
     const sr = 'searcherResults';
-    let stack, curView, nsr = false;
+    let stack, curView;
 
     for(;;) {
       stack = state.getIn('body', 'viewStack');
@@ -55,7 +57,14 @@ class Searcher extends Component {
       state = state.editIn('body', 'viewStack', v => v.push({view: sr}));
       stack = state.getIn('body', 'viewStack');
       curView = stack[stack.length - 1].view;
-      nsr = true;
+
+      const preView = stack.length >= 2 ? stack[stack.length - 2].view : undefined;
+      
+      if( preView === 'products' ) {
+        state = state.setIn('searcher', 'parent', state.getIn(['products', 'list', 'view'], 'parent', nullLink))
+          .setIn(['products', 'list'], 'scroll', scrollXY())
+          .setIn('searcher', 'type', preView);
+        }
     }
 
     if( curView === sr && value.length === 0 && !state.getIn('searcher', 'category') ) {
@@ -63,20 +72,12 @@ class Searcher extends Component {
       stack = state.getIn('body', 'viewStack');
       const st = stack[stack.length - 1];
       state = state.setIn('body', 'view', curView = st.view)
-        .deleteIn([], 'searcher');
-    }
-
-    const preView = stack.length >= 2 ? stack[stack.length - 2].view : undefined;
-
-    if( curView === sr ) {
-      if( preView === 'products' ) {
-        state = state.setIn('searcher', 'parent', state.getIn(['products', 'list', 'view'], 'parent', nullLink))
-        if( nsr )
-          state = state.setIn(['products', 'list'], 'scroll', scrollXY());
-      }
-      state = state.setIn('body', 'view', sr)
         .setIn('searcher', 'filter', value);
     }
+
+    if( curView === sr )
+      state = state.setIn('body', 'view', sr)
+        .setIn('searcher', 'filter', value);
     return state;
   });
 

@@ -38,6 +38,8 @@ class Base extends Component {
     // return props;
   }
 
+  static connectOptions = { withRef: true };
+  
   // static actionStoreState(props) {
   //   const proto = this;
   //   return newAction(state =>

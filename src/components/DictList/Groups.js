@@ -18,7 +18,7 @@ class Groups extends Component {
     };
   }
 
-  state = { isLoading: false };
+  static connectOptions = { withRef: true };
   
   switchGroup = e => {
     const opt = {
@@ -26,55 +26,26 @@ class Groups extends Component {
       link: e.currentTarget.attributes.link.value
     };
     const obj = this;
-    const { listPath, listReloader } = obj.props;
-    obj.setState({ isLoading: true });
-    disp(state => {
-      return listReloader({
-        transformView : view => view.parent = opt.link,
-        onDone        : state => {
-          if( state === undefined )
-            obj.setState({ isLoading: false });
-          else
-            state = state.updateIn(listPath, 'breadcrumb', a => {
-              const i = a.findIndex(v => v.link === opt.link);
-              if( i < 0 )
-                a.push(opt);
-              else
-                a = a.slice(0, i + 1);
-              return a;
-            }, 0);
-          return state;
-        },
-        onError       : state => {
-          if( state === undefined )
-            obj.setState({ isLoading: false });
-          return state;
-        }
-      })(state);
-    });
+    const { listPath } = obj.props;
+    disp(state => state = state.setIn([...listPath, 'view'], 'parent', opt.link, 2)
+      .updateIn(listPath, 'breadcrumb', a => {
+        const i = a.findIndex(v => v.link === opt.link);
+        if( i < 0 )
+          a.push(opt);
+        else
+          a = a.slice(0, i + 1);
+        return a;
+      }, 0)
+    );
   };
 
   clickBackward = e => {
     const obj = this;
-    const { listPath, listReloader } = obj.props;
-    obj.setState({ isLoading: true });
+    const { listPath } = obj.props;
     disp(state => {
       const link = state.getIn(listPath, 'breadcrumb').slice(-2).shift().link;
-      return listReloader({
-        transformView : view => view.parent = link,
-        onDone        : state => {
-          if( state === undefined )
-            obj.setState({ isLoading: false });
-          else
-            state = state.updateIn(listPath, 'breadcrumb', v => { v.pop(); return v; }, 0);
-          return state;
-        },
-        onError       : state => {
-          if( state === undefined )
-            obj.setState({ isLoading: false });
-          return state;
-        }
-      })(state);
+      return state.setIn([...listPath, 'view'], 'parent', link, 2)
+        .updateIn(listPath, 'breadcrumb', v => { v.pop(); return v; }, 0);
     });
   };
   
@@ -118,7 +89,7 @@ class Groups extends Component {
       </Sui.Breadcrumb>;
 
     return ( 
-      <Sui.Segment loading={this.state.isLoading} style={{padding: 0, margin: 0}}>
+      <Sui.Segment style={{padding: 0, margin: 0}}>
         {breadcrumb}
       </Sui.Segment>);
   }

@@ -67,6 +67,8 @@ class Toolbar extends Component {
     };
   }
   
+  static connectOptions = { withRef: true };
+  
   render() {
     if( process.env.NODE_ENV === 'development' )
       console.log('render Toolbar, isDefaultState: '

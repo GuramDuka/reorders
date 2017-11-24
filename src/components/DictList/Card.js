@@ -26,6 +26,8 @@ class Card extends Component {
     };
   }
 
+  static connectOptions = { withRef: true };
+  
   state = { isLoading: false, isImgLargeViewOpen: false };
 
   toggleCard = e => {
@@ -107,9 +109,6 @@ class Card extends Component {
   
   componentDidMount() {
     PubSub.publishSync(LOADING_DONE_TOPIC, 0);
-  }
-  
-  componentDidUpdate(prevProps, prevState) {
   }
   
   render() {

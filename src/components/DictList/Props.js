@@ -12,6 +12,8 @@ class Props extends Component {
     return state.mapIn(ownProps.path);
   }
 
+  static connectOptions = { withRef: true };
+  
   state = {
     numr       : {},
     rows       : [],
