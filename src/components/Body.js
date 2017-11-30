@@ -4,6 +4,7 @@ import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import DictListView from './DictList/List';
 import SearcherResults from './SearcherResults';
+import Login from './Auth/Login';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -30,6 +31,8 @@ class Body extends Component {
         return <Sui.Segment style={{padding: 0, margin: 0}}>
           <SearcherResults path={['searcher']} />
          </Sui.Segment>;
+      case 'login' :
+        return <Login path={['auth']} />;
       default:;
     }
 

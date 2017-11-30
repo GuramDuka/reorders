@@ -118,9 +118,14 @@ class State {
     return this;
   }
 
-  mergeIn(path, iterable, mutateParents = 1) {
-    for (const k in iterable)
-      this.getNode(path, k, true, mutateParents, State.mSetIn, iterable[k]);
+  static mMergeIn(node, key, value) {
+    const v = node[key];
+    for (const k in value)
+      v[k] = value[k];
+  }
+  
+  mergeIn(path, key, iterable, mutateParents = 1) {
+    this.getNode(path, key, true, mutateParents, State.mMergeIn, iterable);
     return this;
   }
 

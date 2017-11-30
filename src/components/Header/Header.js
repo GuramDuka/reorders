@@ -62,6 +62,11 @@ class Header extends Component {
 
           obj.barsMenu.toggleIsOpen();
           break;
+        case 'Вход / Регистрация' :
+          if( state.getIn('body', 'view') !== 'login' )
+            state = state.setIn('body', 'view', 'login')
+              .editIn('body', 'viewStack', v => v.push({view: 'login'}));
+          break;
         default:;
       }
 

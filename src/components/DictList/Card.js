@@ -49,7 +49,14 @@ class Card extends Component {
         mode        : 'cors',
         cache       : 'default'
       };
-      
+
+      if( state.getIn([], 'auth') ) {
+        const auth = state.getIn([], 'auth');
+        const headers = new Headers();
+        headers.append('X-Access-Data', auth.uuid + ', ' + auth.hash + ', ' + auth.token);
+        opts.headers = headers;
+      }
+
       const r = {
         m : 'pkg',
         r : [
@@ -70,9 +77,13 @@ class Card extends Component {
         opts.body = JSON.stringify(r);
 
       const url = BACKEND_URL + (opts.method === 'GET' ? '?' + serializeURIParams({r:r}) : '');
-
+      
       fetch(url, opts).then(response => {
         const contentType = response.headers.get('content-type');
+        const xAccessToken = response.headers.get('X-Access-Token');
+
+        if( xAccessToken )
+          disp(state => state.setIn('auth', 'token', xAccessToken));
 
         if( contentType ) {
           if( contentType.includes('application/json') )

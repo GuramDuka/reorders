@@ -19,8 +19,9 @@ class BarsMenu extends Component {
 
     return {
       ...state.mapIn(ownProps.path),
+      authorized: state.getIn('auth', 'authorized', false),
       view: view,
-      order: state.getIn(path, 'order'),
+      order: path ? state.getIn(path, 'order') : undefined,
       type: view === sr ? state.getIn('searcher', 'type') : view
     };
   }
@@ -38,8 +39,8 @@ class BarsMenu extends Component {
 
   orderByItem = n => {
     const { props } = this;
-    const { onClickItem } = props;
-    const { field, direction } = props.order;
+    const { order, onClickItem } = props;
+    const { field, direction } = order;
 
     return <Sui.Dropdown.Item active={field === n} onClick={onClickItem}>
       {n}{field === n ? <Sui.Icon name={this.sortIcons[direction]} /> : null}
@@ -48,21 +49,22 @@ class BarsMenu extends Component {
 
   render() {
     const { props, state, orderByItem } = this;
-    const { onClickItem } = props;
+    const { view, order, onClickItem } = props;
 
     return <Sui.Menu vertical compact
-      style={{ left: 0, top: 44, position: 'fixed', zIndex: 1000, display: state.isOpen ? 'block' : 'none' }}>
+      style={{ left: 0, top: 44, position: 'fixed', zIndex: 1000, display: state.isOpen ? 'block' : 'none' }}>{order ?
       <Sui.Dropdown item text="Сортировка">
         <Sui.Dropdown.Menu>
           {orderByItem('Код')}
           {orderByItem('Наименование')}
           {orderByItem('Цена')}
         </Sui.Dropdown.Menu>
-      </Sui.Dropdown>
-
-      <Sui.Menu.Item content="Каталог" onClick={onClickItem} />
+      </Sui.Dropdown> : null}{view === 'products' ? null :
+      <Sui.Menu.Item content="Каталог" onClick={onClickItem} />}
       <Sui.Menu.Item content="Корзина" onClick={onClickItem} />
-      <Sui.Menu.Item content="Заказы" onClick={onClickItem} />
+      <Sui.Menu.Item content="Заказы" onClick={onClickItem} />{view === 'login' || props.authorized ? null :
+      <Sui.Menu.Item content="Вход / Регистрация" onClick={onClickItem} />}{props.authorized ?
+      <Sui.Menu.Item content="Выход" onClick={onClickItem} /> : null}
     </Sui.Menu>;
   }
 }

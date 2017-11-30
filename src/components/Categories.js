@@ -97,11 +97,11 @@ class Categories extends Component {
     if( process.env.NODE_ENV === 'development' )
       console.log('render Categories');
 
-    const { props } = this;
+    const { props, state } = this;
 
     return <Sui.Dropdown item style={{border:0, maxWidth:110}} compact
       onChange={props.handleCategoryClick}
-      options={this.state && this.state.options ? this.state.options : []}
+      options={state && state.options ? state.options : []}
       placeholder="Категория"
       value={props.category} />;
   }

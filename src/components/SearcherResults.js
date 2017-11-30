@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import * as PubSub from 'pubsub-js';
+import uuidv1 from 'uuid/v1';
 import { LOADING_START_TOPIC, LOADING_DONE_TOPIC } from './Searcher';
 import { nullLink, sscat } from '../store';
 import Card from './DictList/Card';
@@ -101,11 +102,7 @@ class Piece extends Component {
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
 class BottomSegment extends Component {
-  id = (() => {
-    const a = new Uint32Array(3);
-    window.crypto.getRandomValues(a);
-    return a[0].toString() + a[1].toString() + a[2].toString();
-  })();
+  id = uuidv1();
 
   state = { isLoading: false };
 
