@@ -4,7 +4,7 @@ import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import * as Hashes from 'jshashes';
 import disp from '../../store';
-import BACKEND_URL, { serializeURIParams } from '../../backend';
+import { sfetch } from '../../backend';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -36,8 +36,53 @@ class Login extends Component {
     isDisabledRegistration: true
   };
 
-  handleUser = (e, data) => this.user = data.value;
-  handlePass = (e, data) => this.pass = data.value;
+  handleFieldValue = (e, data) => {
+    this[data.name] = data.value;
+    this.checkFields(data.name);
+  };
+
+  checkFields = field => {
+    const { state, user, email, pass, pass2 } = this;
+    const isRequiredFieldsFilled = this.isRequiredFieldsFilled();
+
+    if (state.isRequiredFieldsFilled !== isRequiredFieldsFilled)
+      this.setState({ isRequiredFieldsFilled: isRequiredFieldsFilled });
+
+    const { isRegistration } = state;
+    let errorMsg;
+
+    if (!user || user.length === 0)
+      errorMsg = 'Не указан(о) E-mail или имя пользователя';
+    else if (!email || email.indexOf('@') < 0 )
+      errorMsg = 'Не указан E-mail';
+    // check non printable symbols, allow only Basic Latin and Cyrillic
+    // http://kourge.net/projects/regexp-unicode-block
+    else if (user.replace(/[\u0020-\u007e,\u00a0-\u00ff,\u0400-\u04FF,\u0500-\u052F]*/g, '').length !== 0)
+      errorMsg = 'Недопустимые символы в имени пользователя';
+    else if (!pass || pass.length === 0)
+      errorMsg = 'Не указан пароль';
+    else if (isRegistration && pass !== pass2)
+      errorMsg = 'Пароли не совпадают';
+
+    if (errorMsg)
+      this.setState({ errorMsg: errorMsg });
+    else if (state.errorMsg)
+      this.setState({ errorMsg: undefined });
+
+    if( field === 'user' )
+      sfetch({ r: { m: 'auth', f: 'check', r: { user: user } } }, json =>
+        json.exists && user && user.toUpperCase() === json.user.toUpperCase()
+        && this.setState({ errorMsg: 'Пользователь с таким E-mail или именем уже существует' }));
+  };
+
+  isRequiredFieldsFilled = e => {
+    const { state, user, email, pass, pass2 } = this;
+    const { isRegistration } = state;
+    return user && user.length !== 0
+      && pass && pass.length !== 0
+      && (!isRegistration || (email && email.indexOf('@') >= 0))
+      && (!isRegistration || pass === pass2);
+  };
 
   handleAcceptTerms = (e, data) => {
     const v = !data.checked;
@@ -49,61 +94,29 @@ class Login extends Component {
   };
 
   handleSubmit = (e, data) => {
+    const { state, user, email, pass } = this;
+    const { isRegistration } = state;
+
     const sha256 = new Hashes.SHA256();
     const rr = {
-      user: this.user,
+      user: user.trim(),
+      email: email.trim(),
       //pass: this.pass,
-      hash: sha256.hex(this.pass).toUpperCase()
+      hash: sha256.hex(pass).toUpperCase()
     };
 
-    const r = {
-      m: 'auth',
-      f: 'login',
-      r: rr
-    };
+    const r = { m: 'auth', f: isRegistration ? 'registration' : 'login', r: rr };
 
-    const opts = {
-      method: 'PUT',
-      credentials: 'omit',
-      mode: 'cors',
-      cache: 'default'
-    };
-
-    if (opts.method === 'PUT')
-      opts.body = JSON.stringify(r);
-
-    const url = BACKEND_URL + (opts.method === 'GET' ? '?' + serializeURIParams({ r: r }) : '');
-    const obj = this;
-
-    fetch(url, opts).then(response => {
-      const contentType = response.headers.get('content-type');
-
-      if (contentType) {
-        if (contentType.includes('application/json'))
-          return response.json();
-        if (contentType.includes('text/'))
-          return response.text();
-      }
-      // will be caught below
-      throw new TypeError('Oops, we haven\'t right type of response! Status: ' + response.status + ', ' + response.statusText);
-    }).then(json => {
-      if (json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array))
-        throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
-
+    sfetch({ r: r }, json => {
       disp(state => {
-        if( json.authorized )
-          state = state.mergeIn(obj.path.slice(-1), obj.path[obj.path - 1], {...rr, ...json, pass: obj.pass});
+        if (json.authorized)
+          state = state.mergeIn(this.path.slice(-1), this.path[this.path - 1],
+            { ...rr, ...json, pass: pass });
         return state;
       });
-      
-      obj.setState({successMsg : 'Вы успешно авторизованы'});
-    }).catch(error => {
-      if (process.env.NODE_ENV === 'development')
-        console.log(error);
 
-      obj.setState({errorMsg : 'Ошибка авторизации'});
-    });
-
+      this.setState({ successMsg: 'Вы успешно ' + (isRegistration ? 'зарегистрированы' : 'авторизованы') });
+    }, error => this.setState({ errorMsg: 'Ошибка ' + (isRegistration ? 'регистрации' : 'авторизации') }));
   };
 
   render() {
@@ -112,21 +125,33 @@ class Login extends Component {
     return <Sui.Segment.Group style={{ margin: 4 }}>
       <Sui.Segment>
         <Sui.Header as="h4" color="teal" textAlign="center">
-          Войдите под своей учётной записью
+          {state.isRegistration ? 'Заполните данные регистрации' : 'Войдите под своей учётной записью'}
         </Sui.Header>
       </Sui.Segment>
       <Sui.Segment>
         <Sui.Form size="large" onSubmit={this.handleSubmit} success={!!state.successMsg} error={!!state.errorMsg}>
           <Sui.Form.Field>
-            <Sui.Input required fluid icon="user" iconPosition="left"
-              placeholder="E-mail или имя пользователя" onChange={this.handleUser}
-              defaultValue={props.user} />
-          </Sui.Form.Field>
+            <Sui.Input autoComplete="off" required fluid
+              icon="user" iconPosition="left" name="user"
+              onChange={this.handleFieldValue} defaultValue={props.user} labelPosition="left"
+              placeholder="E-mail или имя пользователя" />
+          </Sui.Form.Field>{state.isRegistration ?
           <Sui.Form.Field>
-            <Sui.Input required fluid icon="lock" iconPosition="left"
-              placeholder="Пароль" type="password" onChange={this.handlePass}
-              defaultValue={props.pass} />
-          </Sui.Form.Field>
+            <Sui.Input autoComplete="off" required fluid
+              icon="envelope" iconPosition="left" name="email"
+              onChange={this.handleFieldValue} defaultValue={props.user}
+              placeholder="E-mail, если имя пользователя" />
+          </Sui.Form.Field> : null}
+          <Sui.Form.Field>
+            <Sui.Input autoComplete="off" required fluid type="password"
+              icon="lock" iconPosition="left" name="pass"
+              onChange={this.handleFieldValue} defaultValue={props.pass} placeholder="Пароль" />
+          </Sui.Form.Field>{state.isRegistration ?
+          <Sui.Form.Field>
+            <Sui.Input autoComplete="off" required fluid type="password"
+              icon="lock" iconPosition="left" name="pass2"
+              onChange={this.handleFieldValue} defaultValue="" placeholder="Пароль ещё раз" />
+          </Sui.Form.Field> : null}
           <Sui.Form.Checkbox required inline onChange={this.handleAcceptTerms}
             label="Я согласен с условиями использования и политикой конфиденциальности" />
           <Sui.Message visible={state.isVisibleTerms} warning>
@@ -137,21 +162,20 @@ class Login extends Component {
               {this.terms}
             </Sui.Message.Content>
           </Sui.Message>
-          <Sui.Form.Button type="submit" color="teal" fluid size="medium" disabled={state.isDisabledLogin}>
-            Вход
+          <Sui.Form.Button type="submit" color="teal" fluid size="medium" disabled={!state.isRequiredFieldsFilled}>
+            {state.isRegistration ? 'Регистрация' : 'Вход'}
           </Sui.Form.Button>{state.successMsg ?
-            <Sui.Message success header="Form Completed" content={state.successMsg} /> : null}{state.errorMsg ?
-              <Sui.Message error header="Action Forbidden" content="You can only sign up for an account once with a given e-mail address." /> : null}
+            <Sui.Message success header="Успех" content={state.successMsg} /> : null}{state.errorMsg ?
+              <Sui.Message error header="Ошибка" content={state.errorMsg} /> : null}
         </Sui.Form>
-      </Sui.Segment>
-      <Sui.Segment>
-        <Sui.Message>
-          Новый пользователь?&nbsp;
-          <Sui.Button color="teal" size="medium" disabled={state.isDisabledRegistration} >
-            Регистрация
-          </Sui.Button>
-        </Sui.Message>
-      </Sui.Segment>
+      </Sui.Segment>{state.isRegistration ? null :
+        <Sui.Segment>
+          <Sui.Message>
+            Новый пользователь?&nbsp;
+          <Sui.Button color="teal" size="medium" disabled={state.isDisabledRegistration}
+            onClick={e => this.setState({ isRegistration: true })} content="Регистрация" />
+          </Sui.Message>
+        </Sui.Segment>}
     </Sui.Segment.Group>;
   }
 }

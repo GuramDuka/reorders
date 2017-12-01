@@ -1,4 +1,6 @@
 //------------------------------------------------------------------------------
+import { store } from './store';
+//------------------------------------------------------------------------------
 // node_modules\react-scripts\config\webpack.config.prod.js
 // new SWPrecacheWebpackPlugin({
 // runtimeCaching: [{
@@ -132,4 +134,71 @@ const pubUrl = process && process.env && process.env.PUBLIC_URL
 const BACKEND_URL = pubUrl + '/api/backend';
 //------------------------------------------------------------------------------
 export default BACKEND_URL;
+//------------------------------------------------------------------------------
+export function sfetch(opts, success, fail) {
+  if (opts.method === undefined )
+    opts.method = 'GET';
+
+  if (opts.credentials === undefined )
+    opts.credentials = 'omit';
+
+  if (opts.mode === undefined )
+    opts.mode = 'cors';
+
+  if (opts.cache === undefined )
+    opts.cache = 'default';
+
+  if (opts.method === 'PUT')
+    opts.body = JSON.stringify(opts.r);
+
+  // send auth data
+  // antipattern, but only as an exception and it is the fastest method
+  const auth = store.getState().getIn([], 'auth');
+
+  if( auth && auth.uuid && auth.hash && auth.token ) {
+    const headers = opts.headers ? opts.headers : new Headers();
+    headers.append('X-Access-Data', auth.uuid + ', ' + auth.hash + ', ' + auth.token);
+    opts.headers = headers;
+  }
+
+  const url = BACKEND_URL + (opts.method === 'GET'
+    ? '?' + serializeURIParams({ r: opts.r }) : '');
+
+  return fetch(url, opts).then(response => {
+    const contentType = response.headers.get('content-type');
+
+    // check if access token refreshed
+    const xAccessToken = response.headers.get('X-Access-Token');
+    // antipattern, but only as an exception and it is the fastest method
+    xAccessToken && store.getState().setIn('auth', 'token', xAccessToken, 0);
+
+    if( contentType ) {
+      if( contentType.includes('application/json') )
+        return response.json();
+      if( contentType.includes('text/') )
+        return response.text();
+    }
+    // will be caught below
+    throw new TypeError('Oops, we haven\'t right type of response! Status: ' + response.status + ', ' + response.statusText);
+  }).then(json => {
+    if( json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array) )
+      throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
+
+    success && success.constructor === Function && success(json);
+  }).catch(error => {
+    if( process.env.NODE_ENV === 'development' )
+      console.log(error);
+    
+    fail && fail.constructor === Function && fail(error);
+  });
+}
+//------------------------------------------------------------------------------
+export function icoUrl(u, w, h) {
+  return BACKEND_URL + '?'
+    + serializeURIParams({r: {m: 'img', f: 'ico', u: u, w: w, h: w}});
+}
+//------------------------------------------------------------------------------
+export function imgUrl(u) {
+  return BACKEND_URL + '?' + serializeURIParams({r: {m: 'img', u: u}});
+}
 //------------------------------------------------------------------------------

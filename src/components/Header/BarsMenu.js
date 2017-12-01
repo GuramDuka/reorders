@@ -62,7 +62,8 @@ class BarsMenu extends Component {
       </Sui.Dropdown> : null}{view === 'products' ? null :
       <Sui.Menu.Item content="Каталог" onClick={onClickItem} />}
       <Sui.Menu.Item content="Корзина" onClick={onClickItem} />
-      <Sui.Menu.Item content="Заказы" onClick={onClickItem} />{view === 'login' || props.authorized ? null :
+      <Sui.Menu.Item content="Заказы" onClick={onClickItem} />{props.authorized ?
+      <Sui.Menu.Item content="Профиль" onClick={onClickItem} /> : null}{view === 'login' || props.authorized ? null :
       <Sui.Menu.Item content="Вход / Регистрация" onClick={onClickItem} />}{props.authorized ?
       <Sui.Menu.Item content="Выход" onClick={onClickItem} /> : null}
     </Sui.Menu>;

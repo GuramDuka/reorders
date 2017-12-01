@@ -5,7 +5,7 @@ import * as Sui from 'semantic-ui-react';
 import disp, { nullLink, sscat } from '../../store';
 import * as PubSub from 'pubsub-js';
 import { LOADING_DONE_TOPIC } from '../Searcher';
-import BACKEND_URL, { transform, serializeURIParams } from '../../backend';
+import { transform, sfetch, icoUrl, imgUrl } from '../../backend';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -38,25 +38,10 @@ class Card extends Component {
     disp(state => state.toggleIn(path, 'expanded'));
   };
 
-  reload = (options) => {
-    const obj = this;
-    const { link } = obj.props;
-    obj.setState({isLoading: true});
+  reload = e => {
+    const { link } = this.props;
+    this.setState({isLoading: true});
     return state => {
-      const opts = {
-        method      : options && options.refresh ? 'PUT' : 'GET',
-        credentials : 'omit',
-        mode        : 'cors',
-        cache       : 'default'
-      };
-
-      if( state.getIn([], 'auth') ) {
-        const auth = state.getIn([], 'auth');
-        const headers = new Headers();
-        headers.append('X-Access-Data', auth.uuid + ', ' + auth.hash + ', ' + auth.token);
-        opts.headers = headers;
-      }
-
       const r = {
         m : 'pkg',
         r : [
@@ -73,37 +58,10 @@ class Card extends Component {
         ]
       };
     
-      if( opts.method === 'PUT' )
-        opts.body = JSON.stringify(r);
-
-      const url = BACKEND_URL + (opts.method === 'GET' ? '?' + serializeURIParams({r:r}) : '');
-      
-      fetch(url, opts).then(response => {
-        const contentType = response.headers.get('content-type');
-        const xAccessToken = response.headers.get('X-Access-Token');
-
-        if( xAccessToken )
-          disp(state => state.setIn('auth', 'token', xAccessToken));
-
-        if( contentType ) {
-          if( contentType.includes('application/json') )
-            return response.json();
-          if( contentType.includes('text/') )
-            return response.text();
-        }
-        // will be caught below
-        throw new TypeError('Oops, we haven\'t right type of response! Status: ' + response.status + ', ' + response.statusText);
-      }).then(json => {
-        if( json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array) )
-          throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
+      sfetch({r: r}, json => {
         json = transform(json);
-        obj.setState({props: json[0], desc: json[1], isLoading: false});
-      })
-      .catch(error => {
-        if( process.env.NODE_ENV === 'development' )
-          console.log(error);
-        obj.setState({isLoading: false});
-      });
+        this.setState({props: json[0], desc: json[1], isLoading: false});
+      }, error => this.setState({isLoading: false}));
 
       return state;
     };
@@ -131,15 +89,11 @@ class Card extends Component {
     //   console.log('render Card: ' + props.path[props.path.length - 1] + ', isLoading: ' + state.isLoading);
     
     const icoKey = data.ОсновноеИзображение || nullLink;
-    
-    const icoUrl = BACKEND_URL + '?'
-      + serializeURIParams({r: {m: 'img', f: 'ico', u: icoKey, w: 28, h: 28}});
     const ico = icoKey === nullLink ? null :
-      <Sui.Image size="mini" src={icoUrl} style={{padding:2}} />;
+      <Sui.Image size="mini" src={icoUrl(icoKey, 28, 28)} style={{padding:2}} />;
 
-    const imgUrl = BACKEND_URL + '?' + serializeURIParams({r: {m: 'img', u: icoKey}});
     const img = icoKey === nullLink ? null :
-      <Sui.Image floated="left" size="tiny" src={imgUrl} onClick={this.clickImg} />;
+      <Sui.Image floated="left" size="tiny" src={imgUrl(icoKey)} onClick={this.clickImg} />;
 
     const fprp = rows => {
       const a = [];
