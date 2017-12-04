@@ -66,6 +66,16 @@ class Header extends Component {
           if( state.getIn('body', 'view') !== 'login' )
             state = state.setIn('body', 'view', 'login')
               .editIn('body', 'viewStack', v => v.push({view: 'login'}));
+          obj.barsMenu.toggleIsOpen();
+          break;
+        case 'Выход' :
+          state = state.editIn([], 'auth', v => {
+            delete v.pass;
+            delete v.hash;
+            delete v.token;
+            delete v.authorized;
+          });
+          obj.barsMenu.toggleIsOpen();
           break;
         default:;
       }
@@ -73,6 +83,8 @@ class Header extends Component {
       return state;
     });
   };
+
+  eRef = e => e && e.getWrappedInstance ? e.getWrappedInstance() : e;
 
   render() {
     if( process.env.NODE_ENV === 'development' )
@@ -82,7 +94,7 @@ class Header extends Component {
     
     return <Sui.Menu attached="top" style={{left: 0, top: 0, height: 44, position: 'fixed', zIndex: 1000 }}>
       <Sui.Menu.Item active={false} icon="bars" onClick={e => this.barsMenu.toggleIsOpen()} />
-      <BarsMenu path={[...path, 'menu']} ref={e => this.barsMenu = e.getWrappedInstance()} onClickItem={this.switchView} />
+      <BarsMenu path={[...path, 'menu']} ref={e => this.barsMenu = this.eRef(e)} onClickItem={this.switchView} />
       <Categories path={[...path, 'categories']} />
 
       <Sui.Menu.Menu>

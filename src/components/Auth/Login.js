@@ -43,36 +43,39 @@ class Login extends Component {
 
   checkFields = field => {
     const { state, user, email, pass, pass2 } = this;
-    const isRequiredFieldsFilled = this.isRequiredFieldsFilled();
-
-    if (state.isRequiredFieldsFilled !== isRequiredFieldsFilled)
-      this.setState({ isRequiredFieldsFilled: isRequiredFieldsFilled });
-
     const { isRegistration } = state;
     let errorMsg;
 
+    this.checkRequiredFieldsFilled();
+
     if (!user || user.length === 0)
       errorMsg = 'Не указан(о) E-mail или имя пользователя';
-    else if (!email || email.indexOf('@') < 0 )
-      errorMsg = 'Не указан E-mail';
-    // check non printable symbols, allow only Basic Latin and Cyrillic
+    // check non printable symbols, allow only Basic Latin and Cyrillic, exclude space
     // http://kourge.net/projects/regexp-unicode-block
-    else if (user.replace(/[\u0020-\u007e,\u00a0-\u00ff,\u0400-\u04FF,\u0500-\u052F]*/g, '').length !== 0)
+    else if (user.replace(/[\u0021-\u007e,\u00a0-\u00ff,\u0400-\u04FF,\u0500-\u052F]*/g, '').length !== 0
+        || user.indexOf('.') >= 0 )
       errorMsg = 'Недопустимые символы в имени пользователя';
+    else if (isRegistration && (!email || email.indexOf('@') < 0) )
+      errorMsg = 'Не указан E-mail';
     else if (!pass || pass.length === 0)
       errorMsg = 'Не указан пароль';
     else if (isRegistration && pass !== pass2)
       errorMsg = 'Пароли не совпадают';
 
     if (errorMsg)
-      this.setState({ errorMsg: errorMsg });
+      this.setState({ successMsg: undefined, errorMsg: errorMsg });
     else if (state.errorMsg)
       this.setState({ errorMsg: undefined });
 
-    if( field === 'user' )
+    const obj = this;
+
+    if( isRegistration )
       sfetch({ r: { m: 'auth', f: 'check', r: { user: user } } }, json =>
         json.exists && user && user.toUpperCase() === json.user.toUpperCase()
-        && this.setState({ errorMsg: 'Пользователь с таким E-mail или именем уже существует' }));
+        && obj.setState({
+          successMsg: undefined,
+          errorMsg: 'Пользователь с таким E-mail или именем уже существует'
+        }));
   };
 
   isRequiredFieldsFilled = e => {
@@ -84,6 +87,13 @@ class Login extends Component {
       && (!isRegistration || pass === pass2);
   };
 
+  checkRequiredFieldsFilled = e => {
+    const isRequiredFieldsFilled = this.isRequiredFieldsFilled();
+  
+    if (this.state.isRequiredFieldsFilled !== isRequiredFieldsFilled)
+      this.setState({ isRequiredFieldsFilled: isRequiredFieldsFilled });
+  };
+    
   handleAcceptTerms = (e, data) => {
     const v = !data.checked;
     this.setState({
@@ -94,30 +104,53 @@ class Login extends Component {
   };
 
   handleSubmit = (e, data) => {
-    const { state, user, email, pass } = this;
+    const { props, state, user, email, pass } = this;
     const { isRegistration } = state;
 
     const sha256 = new Hashes.SHA256();
     const rr = {
       user: user.trim(),
-      email: email.trim(),
       //pass: this.pass,
       hash: sha256.hex(pass).toUpperCase()
     };
 
+    if( isRegistration && email )
+      rr.email = email.trim();
+
     const r = { m: 'auth', f: isRegistration ? 'registration' : 'login', r: rr };
 
-    sfetch({ r: r }, json => {
-      disp(state => {
-        if (json.authorized)
-          state = state.mergeIn(this.path.slice(-1), this.path[this.path - 1],
-            { ...rr, ...json, pass: pass });
-        return state;
-      });
+    const success = (state, json) => {
+      const { path } = props;
+      state = state.mergeIn(path.slice(0, -1), path[path.length - 1],
+        { ...rr, ...json, pass: pass });
 
-      this.setState({ successMsg: 'Вы успешно ' + (isRegistration ? 'зарегистрированы' : 'авторизованы') });
-    }, error => this.setState({ errorMsg: 'Ошибка ' + (isRegistration ? 'регистрации' : 'авторизации') }));
+      state = state.editIn('body', 'viewStack', v => v.pop());
+      const stack = state.getIn('body', 'viewStack');
+      state = state.setIn('body', 'view', stack[stack.length - 1].view);
+
+      return state;
+    };
+
+    const fail = error => this.setState({
+      successMsg: undefined,
+      errorMsg: 'Ошибка ' + (isRegistration ? 'регистрации' : 'авторизации')
+    });
+
+    sfetch({ r: r }, json => {
+      if ((isRegistration && json.registered) || json.authorized)
+        disp(state => success(state, json));
+      else
+        fail();
+    }, fail);
   };
+
+  componentDidMount() {
+    const { props } = this;
+    this.user = props.user;
+    this.email = props.email;
+    this.pass = props.pass;
+    this.checkRequiredFieldsFilled();
+  }
 
   render() {
     const { props, state } = this;
@@ -137,9 +170,9 @@ class Login extends Component {
               placeholder="E-mail или имя пользователя" />
           </Sui.Form.Field>{state.isRegistration ?
           <Sui.Form.Field>
-            <Sui.Input autoComplete="off" required fluid
+            <Sui.Input autoComplete="off" required fluid type="email"
               icon="envelope" iconPosition="left" name="email"
-              onChange={this.handleFieldValue} defaultValue={props.user}
+              onChange={this.handleFieldValue} defaultValue={props.email}
               placeholder="E-mail, если имя пользователя" />
           </Sui.Form.Field> : null}
           <Sui.Form.Field>

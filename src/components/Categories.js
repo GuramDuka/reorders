@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import disp from '../store';
-import BACKEND_URL, { transform, serializeURIParams } from '../backend';
+import { transform, sfetch } from '../backend';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -46,46 +46,17 @@ class Categories extends Component {
   
   load = () => {
     const obj = this;
-    const rr = {
-      target: 'Номенклатура',
-    };
-
     const r = {
       m : 'category',
       f : 'list',
-      r : rr
+      r : {
+        target: 'Номенклатура',
+      }
     };
   
-    const opts = {
-      method      : 'GET',
-      credentials : 'omit',
-      mode        : 'cors',
-      cache       : 'default'
-    };
-
-    const url = BACKEND_URL + '?' + serializeURIParams({r:r});
-
-    fetch(url, opts).then(response => {
-      const contentType = response.headers.get('content-type');
-
-      if( contentType ) {
-        if( contentType.includes('application/json') )
-          return response.json();
-        if( contentType.includes('text/') )
-          return response.text();
-      }
-      // will be caught below
-      throw new TypeError('Oops, we haven\'t right type of response! Status: ' + response.status + ', ' + response.statusText);
-    }).then(json => {
-      if( json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array) )
-        throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
-
+    sfetch({r: r}, json => {
       obj.setState({options: transform(json).rows.map(
         (r, i) => ({ key: i, text: r.Наименование, value: r.Ссылка }))});
-    })
-    .catch(error => {
-      if( process.env.NODE_ENV === 'development' )
-        console.log(error);
     });
   };
 

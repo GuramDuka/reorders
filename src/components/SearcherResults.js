@@ -8,7 +8,7 @@ import { LOADING_START_TOPIC, LOADING_DONE_TOPIC } from './Searcher';
 import { nullLink, sscat } from '../store';
 import Card from './DictList/Card';
 import nopic from '../assets/nopic.svg';
-import BACKEND_URL, { transform, serializeURIParams } from '../backend';
+import BACKEND_URL, { transform, serializeURIParams, sfetch } from '../backend';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -186,30 +186,7 @@ class SearcherResults extends Component {
       r: rr
     };
 
-    const opts = {
-      method: 'GET',
-      credentials: 'omit',
-      mode: 'cors',
-      cache: 'default'
-    };
-
-    const url = BACKEND_URL + '?' + serializeURIParams({ r: r });
-
-    fetch(url, opts).then(response => {
-      const contentType = response.headers.get('content-type');
-
-      if (contentType) {
-        if (contentType.includes('application/json'))
-          return response.json();
-        if (contentType.includes('text/'))
-          return response.text();
-      }
-      // will be caught below
-      throw new TypeError('Oops, we haven\'t right type of response! Status: ' + response.status + ', ' + response.statusText);
-    }).then(json => {
-      if (json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array))
-        throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
-
+    sfetch({r:r}, json => {
       obj.list = transform(json).rows;
       obj.offs = obj.index;
       obj.index = obj.list.length < rr.piece ? undefined : obj.index + rr.piece;
@@ -218,9 +195,7 @@ class SearcherResults extends Component {
 
       if (obj.offs === 0 || obj.index === undefined)
         obj.emitLoadingDone();
-    }).catch(error => {
-      if (process.env.NODE_ENV === 'development')
-        console.log(error);
+    }, error => {
       obj.list = [];
       obj.offs = obj.index;
       obj.index = undefined;

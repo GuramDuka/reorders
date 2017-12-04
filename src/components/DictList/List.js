@@ -4,7 +4,7 @@ import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import * as PubSub from 'pubsub-js';
 import { LOADING_START_TOPIC, LOADING_DONE_TOPIC } from '../Searcher';
-import BACKEND_URL, { transform, serializeURIParams } from '../../backend';
+import { transform, sfetch } from '../../backend';
 import Groups from './Groups';
 import Card from './Card';
 //------------------------------------------------------------------------------
@@ -23,41 +23,15 @@ class List extends Component {
     grps       : []
   };
   
-  reload = (view, options) => {
+  reload = (view) => {
     const obj = this;
-    const opts = {
-      method      : options && options.refresh ? 'PUT' : 'GET',
-      credentials : 'omit',
-      mode        : 'cors',
-      cache       : 'default'
-    };
-    
     const r = {
       r : view,
       m : 'dict',
       f : 'list'
     };
   
-    if( opts.method === 'PUT' )
-      opts.body = JSON.stringify(r);
-
-    const url = BACKEND_URL + (opts.method === 'GET' ? '?' + serializeURIParams({r:r}) : '');
-
-    fetch(url, opts).then(response => {
-      const contentType = response.headers.get('content-type');
-
-      if( contentType ) {
-        if( contentType.includes('application/json') )
-          return response.json();
-        if( contentType.includes('text/') )
-          return response.text();
-      }
-      // will be caught below
-      throw new TypeError('Oops, we haven\'t right type of response! Status: ' + response.status + ', ' + response.statusText);
-    }).then(json => {
-      if( json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array) )
-        throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
-
+    sfetch({r:r}, json => {
       json = transform(json, 'Ссылка');
 
       const coll = new Intl.Collator();
@@ -70,13 +44,7 @@ class List extends Component {
       obj.setState(data);
       PubSub.publish(LOADING_DONE_TOPIC, 0);
       obj.restoreScrollPosition();
-    })
-    .catch(error => {
-      if( process.env.NODE_ENV === 'development' )
-        console.log(error);
-
-      PubSub.publish(LOADING_DONE_TOPIC, 0);
-    });
+    }, error => PubSub.publish(LOADING_DONE_TOPIC, 0));
 
     PubSub.publishSync(LOADING_START_TOPIC, 0);
     

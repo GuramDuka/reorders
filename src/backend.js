@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-import { store } from './store';
+import disp, { store } from './store';
 //------------------------------------------------------------------------------
 // node_modules\react-scripts\config\webpack.config.prod.js
 // new SWPrecacheWebpackPlugin({
@@ -155,9 +155,9 @@ export function sfetch(opts, success, fail) {
   // antipattern, but only as an exception and it is the fastest method
   const auth = store.getState().getIn([], 'auth');
 
-  if( auth && auth.uuid && auth.hash && auth.token ) {
+  if( auth && auth.uuid && auth.hash ) {
     const headers = opts.headers ? opts.headers : new Headers();
-    headers.append('X-Access-Data', auth.uuid + ', ' + auth.hash + ', ' + auth.token);
+    headers.append('X-Access-Data', auth.uuid + ', ' + auth.hash + (auth.token ? ', ' + auth.token : ''));
     opts.headers = headers;
   }
 
@@ -168,10 +168,32 @@ export function sfetch(opts, success, fail) {
     const contentType = response.headers.get('content-type');
 
     // check if access token refreshed
-    const xAccessToken = response.headers.get('X-Access-Token');
+    let xAccessToken = response.headers.get('X-Access-Token');
+    let xAccessTokenTimestamp;
+    if( xAccessToken ) {
+      [ xAccessToken, xAccessTokenTimestamp ] = xAccessToken.split(',');
+      xAccessToken = xAccessToken.trim();
+      xAccessTokenTimestamp = ~~xAccessTokenTimestamp.trim();
+    }
     // antipattern, but only as an exception and it is the fastest method
-    xAccessToken && store.getState().setIn('auth', 'token', xAccessToken, 0);
+    //const state = store.getState();
 
+    disp(state => {
+      if( xAccessToken ) {
+        if( xAccessToken !== state.getIn('auth', 'token')
+            || xAccessTokenTimestamp > state.getIn('auth', 'timestamp') )
+          state = state.editIn([], 'auth', v => {
+            v.authorized = true;
+            v.token = xAccessToken;
+            v.timestamp = xAccessTokenTimestamp;
+          });
+      }
+      else
+        state = state.editIn([], 'auth', v => { delete v.token; delete v.authorized; });
+
+      return state;
+    });
+      
     if( contentType ) {
       if( contentType.includes('application/json') )
         return response.json();

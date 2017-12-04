@@ -94,7 +94,7 @@ class Card extends Component {
 
     const img = icoKey === nullLink ? null :
       <Sui.Image floated="left" size="tiny" src={imgUrl(icoKey)} onClick={this.clickImg} />;
-
+ 
     const fprp = rows => {
       const a = [];
 
@@ -195,7 +195,7 @@ class Card extends Component {
         </Sui.Card.Content> : null}{expanded ?
         <Sui.Modal open={this.state.isImgLargeViewOpen} onClose={this.closeImgLargeView}>
           <Sui.Modal.Content image>
-            <Sui.Image wrapped fluid src={imgUrl} />
+            <Sui.Image wrapped fluid src={imgUrl(icoKey)} />
           </Sui.Modal.Content>
           <Sui.Modal.Actions>
             <Sui.Button icon="checkmark" labelPosition="right" content="Закрыть" onClick={this.closeImgLargeView} />
