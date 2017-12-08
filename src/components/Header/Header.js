@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
+import { sfetch } from '../../backend';
 import disp from '../../store';
 import Searcher from '../Searcher';
 import Categories from '../Categories';
@@ -23,8 +24,8 @@ class Header extends Component {
       const sr = 'searcherResults';
       const content = data.content !== undefined ? data.content : data.children[0];
       
-      switch( content ) {
-        case 'Каталог' :
+      switch( data.view ) {
+        case 'catalog' :
           for(;;) {
             const stack = state.getIn('body', 'viewStack');
             const view = stack[stack.length - 1].view;
@@ -39,9 +40,9 @@ class Header extends Component {
 
           obj.barsMenu.toggleIsOpen();
           break;
-        case 'Код' :
-        case 'Наименование' :
-        case 'Цена' :
+        case 'code' :
+        case 'name' :
+        case 'price' :
           const view = state.getIn('body', 'view');
           let path;
 
@@ -62,19 +63,22 @@ class Header extends Component {
 
           obj.barsMenu.toggleIsOpen();
           break;
-        case 'Вход / Регистрация' :
+        case 'login' :
           if( state.getIn('body', 'view') !== 'login' )
             state = state.setIn('body', 'view', 'login')
               .editIn('body', 'viewStack', v => v.push({view: 'login'}));
           obj.barsMenu.toggleIsOpen();
           break;
-        case 'Выход' :
-          state = state.editIn([], 'auth', v => {
+        case 'logout' :
+          sfetch({r: { m: 'auth', f: 'logout', r: {}}}, json => disp(state => state.editIn([], 'auth', v => {
             delete v.pass;
+            delete v.employee;
             delete v.hash;
             delete v.token;
+            delete v.timestamp;
             delete v.authorized;
-          });
+          }).setIn('body', 'view', 'reload')));
+
           obj.barsMenu.toggleIsOpen();
           break;
         default:;

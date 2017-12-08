@@ -119,7 +119,11 @@ class State {
   }
 
   static mMergeIn(node, key, value) {
-    const v = node[key];
+    let v = node[key];
+    
+    if( v === undefined )
+      node[key] = v = {};
+
     for (const k in value)
       v[k] = value[k];
   }
@@ -139,7 +143,12 @@ class State {
   }
 
   static mEditIn(node, key, functor) {
-    functor(node[key], key, node);
+    let v = node[key];
+    
+    if( v === undefined )
+      node[key] = v = {};
+
+    functor(v, key, node);
   }
 
   editIn(path, key, functor, mutateParents = 1) {

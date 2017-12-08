@@ -10,7 +10,9 @@
     }
   ],
   "dependencies": {
+    "double-ended-queue": "^2.1.0-0",
     "jshashes": "^1.0.7",
+    "json3": "^3.3.2",
     "prop-types": "^15.6.0",
     "pubsub-js": "^1.5.7",
     "react": "^16.2.0",
@@ -29,7 +31,7 @@
   },
   "proxy": {
     "/api/backend": {
-      "target": "http://31.210.212.158:65480/opt-ws/hs/react",
+      "target": "http://192.168.5.221/opt/hs/react",
       "pathRewrite": {
         "^/api/backend": "/"
       }

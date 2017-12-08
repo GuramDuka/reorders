@@ -17,7 +17,7 @@ class Card extends Component {
   static mapDispatchToProps(dispatch, ownProps) {
     const { path } = ownProps;
     return {
-      clickPropsTitle : e => {
+      clickTitle : e => {
         // cast to integer, fast (and short) way is the double-bitwise not (i.e. using two tilde characters)
         const idx = ~~e.currentTarget.attributes.idx.value;
         disp(state => state.toggleIn([...path, 'activeTitles'], idx, 2));
@@ -45,22 +45,15 @@ class Card extends Component {
       const r = {
         m : 'pkg',
         r : [
-          {
-            r : { type : 'Номенклатура', link : link },
-            m : 'dict',
-            f : 'prop'
-          },
-          {
-            r : { type : 'Номенклатура', link : link },
-            m : 'dict',
-            f : 'desc'
-          }
+          { m : 'dict', f : 'prop', r : { type : 'Номенклатура', link : link } },
+          { m : 'dict', f : 'desc', r : { type : 'Номенклатура', link : link } },
+          { m : 'dict', f : 'rems', r : { type : 'Номенклатура', link : link } }
         ]
       };
-    
-      sfetch({r: r}, json => {
+
+      sfetch({a: true, e : true, r: r}, json => {
         json = transform(json);
-        this.setState({props: json[0], desc: json[1], isLoading: false});
+        this.setState({props: json[0], desc: json[1], rems: json[2], isLoading: false});
       }, error => this.setState({isLoading: false}));
 
       return state;
@@ -82,7 +75,7 @@ class Card extends Component {
   
   render() {
     const { props, state } = this;
-    const { expanded, data, clickPropsTitle } = props;
+    const { expanded, data, clickTitle } = props;
     const activeTitles = Array.isArray(props.activeTitles) ? props.activeTitles : [];
     
     // if( process.env.NODE_ENV === 'development' )
@@ -120,7 +113,14 @@ class Card extends Component {
     };
 
     const prop = expanded && state.props && state.props.rows.length !== 0 ? fprp(state.props.rows) : null;
-  
+
+    const frems = rows => rows.map((row, i, a) => [
+      <strong key={i*2} style={{color:'black'}}>{row.Склад}: </strong>,
+      <i key={i*2 + 1} style={{color:'black'}}>{row.Остаток + (i + 1 !== a.length ? ',' : '')}</i>
+    ]);
+
+    const rems = expanded && state.rems && state.rems.rows.length !== 0 ? frems(state.rems.rows) : null;
+    
     const desc = expanded && state.desc
       ? state.desc.ДополнительноеОписаниеНоменклатуры
         //.replace(/\\r\\n/g, '<br />')
@@ -142,7 +142,7 @@ class Card extends Component {
           {data.Цена          ? [<strong key="9" style={{color:'black'}}>, Цена:</strong>, <i key="13" style={{color:'black'}}>{data.Цена + '₽'}</i>] : null}
         </Sui.Accordion.Content>{prop ?
         <Sui.Accordion.Title active={!!activeTitles[1]}
-          index={1} idx={1} onClick={clickPropsTitle}>
+          index={1} idx={1} onClick={clickTitle}>
           <Sui.Label size="small" color="blue">
             <Sui.Icon name="dropdown" size="large" />
             Свойства
@@ -151,15 +151,26 @@ class Card extends Component {
         </Sui.Accordion.Title> : null}{prop ?
         <Sui.Accordion.Content active={!!activeTitles[1]}>
           {prop}
+        </Sui.Accordion.Content> : null}{rems ?
+        <Sui.Accordion.Title active={!!activeTitles[2]}
+          index={2} idx={2} onClick={clickTitle}>
+          <Sui.Label size="small" color="blue">
+            <Sui.Icon name="dropdown" size="large" />
+            Остатки
+            <Sui.Label.Detail>{state.rems.rows.length}</Sui.Label.Detail>
+          </Sui.Label>
+        </Sui.Accordion.Title> : null}{rems ?
+        <Sui.Accordion.Content active={!!activeTitles[2]}>
+          {rems}
         </Sui.Accordion.Content> : null}{desc.length === 0 ? null :
-        <Sui.Accordion.Title active={!!activeTitles[2]} index={2} idx={2} onClick={clickPropsTitle}>
+        <Sui.Accordion.Title active={!!activeTitles[3]} index={3} idx={3} onClick={clickTitle}>
           <Sui.Label size="small" color="blue">
             <Sui.Icon name="dropdown" size="large" />
             Описание
             <Sui.Label.Detail>{desc.length}</Sui.Label.Detail>
           </Sui.Label>
         </Sui.Accordion.Title>}
-        <Sui.Accordion.Content active={!!activeTitles[2]}>
+        <Sui.Accordion.Content active={!!activeTitles[3]}>
           <Sui.Container fluid textAlign="justified" style={{color:'black'}}>{desc}</Sui.Container>
         </Sui.Accordion.Content>
       </Sui.Accordion> : null;

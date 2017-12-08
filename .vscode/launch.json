@@ -36,11 +36,9 @@
     "name": "Firefox",
     "type": "firefox",
     "request": "launch",
+    "reAttach": true,
+    "firefoxExecutable": "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
     "url": "http://localhost:3000",
-    "webRoot": "${workspaceRoot}/src",
-    "userDataDir": "${workspaceRoot}/.vscode/firefox",
-    "sourceMapPathOverrides": {
-      "webpack:///src/*": "${webRoot}/*"
-    }
+    "webRoot": "${workspaceRoot}/src"
   }]
 }

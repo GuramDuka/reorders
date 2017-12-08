@@ -1,4 +1,5 @@
 //------------------------------------------------------------------------------
+import Deque from 'double-ended-queue';
 import disp, { store } from './store';
 //------------------------------------------------------------------------------
 // node_modules\react-scripts\config\webpack.config.prod.js
@@ -134,93 +135,222 @@ const pubUrl = process && process.env && process.env.PUBLIC_URL
 const BACKEND_URL = pubUrl + '/api/backend';
 //------------------------------------------------------------------------------
 export default BACKEND_URL;
+let batchJob;
 //------------------------------------------------------------------------------
-export function sfetch(opts, success, fail) {
-  if (opts.method === undefined )
+export function sfetch(opts, success, fail, start) {
+  if (opts.method === undefined)
     opts.method = 'GET';
 
-  if (opts.credentials === undefined )
+  if (opts.credentials === undefined)
     opts.credentials = 'omit';
 
-  if (opts.mode === undefined )
+  if (opts.mode === undefined)
     opts.mode = 'cors';
 
-  if (opts.cache === undefined )
+  if (opts.cache === undefined)
     opts.cache = 'default';
 
-  if (opts.method === 'PUT')
+  if (opts.method === 'PUT' && opts.r !== undefined )
     opts.body = JSON.stringify(opts.r);
 
-  // send auth data
-  // antipattern, but only as an exception and it is the fastest method
-  const auth = store.getState().getIn([], 'auth');
+  let authData;
 
-  if( auth && auth.uuid && auth.hash ) {
-    const headers = opts.headers ? opts.headers : new Headers();
-    headers.append('X-Access-Data', auth.uuid + ', ' + auth.hash + (auth.token ? ', ' + auth.token : ''));
-    opts.headers = headers;
+  if( !opts.noauth ) {
+    // send auth data
+    // antipattern, but only as an exception and it is the fastest method
+    const auth = store.getState().getIn([], 'auth');
+
+    if (auth && auth.authorized) {
+      const headers = opts.headers ? opts.headers : new Headers();
+      authData = auth.uuid + ', ' + auth.hash;
+
+      if (auth.token)
+        authData += ', ' + auth.token;
+
+      headers.append('X-Access-Data', authData);
+      opts.headers = headers;
+    }
+
+    // need for caching authorized request separate from regular not authorized
+    if (opts.r && auth) {
+      if (opts.a === true && auth.authorized)
+        opts.r.a = true;
+      else if (opts.a === '' && auth.uuid)
+        opts.r.a = auth.uuid;
+
+      if (auth.employee) {
+        if (opts.e === true)
+          opts.r.e = true;
+        else if (opts.e === '' && auth.employee)
+          opts.r.e = auth.employee;
+      }
+    }
   }
 
-  const url = BACKEND_URL + (opts.method === 'GET'
-    ? '?' + serializeURIParams({ r: opts.r }) : '');
+  let url = BACKEND_URL;
+
+  if( opts.method === 'GET' && opts.r !== undefined )
+    url += '?' + serializeURIParams({ r: opts.r });
+
+  if( opts.batch ) {
+    const b = {...opts};
+    delete b.batch;
+    batchJob(b, (bOpts, bSuccess, bFail) => {
+      sfetch(bOpts,
+        result => bSuccess() && success(),
+        error => bFail() && fail(),
+        sOpts => start(sOpts));
+    });
+    return;
+  }
+
+  start && start.constructor === Function && start(opts);
 
   return fetch(url, opts).then(response => {
     const contentType = response.headers.get('content-type');
 
-    // check if access token refreshed
-    let xAccessToken = response.headers.get('X-Access-Token');
-    let xAccessTokenTimestamp;
-    if( xAccessToken ) {
-      [ xAccessToken, xAccessTokenTimestamp ] = xAccessToken.split(',');
-      xAccessToken = xAccessToken.trim();
-      xAccessTokenTimestamp = ~~xAccessTokenTimestamp.trim();
-    }
-    // antipattern, but only as an exception and it is the fastest method
-    //const state = store.getState();
-
-    disp(state => {
-      if( xAccessToken ) {
-        if( xAccessToken !== state.getIn('auth', 'token')
-            || xAccessTokenTimestamp > state.getIn('auth', 'timestamp') )
-          state = state.editIn([], 'auth', v => {
-            v.authorized = true;
-            v.token = xAccessToken;
-            v.timestamp = xAccessTokenTimestamp;
-          });
+    if (authData) {
+      // check if access token refreshed
+      let xAccessToken = response.headers.get('X-Access-Token');
+      let xAccessTokenTimestamp;
+      if (xAccessToken) {
+        [xAccessToken, xAccessTokenTimestamp] = xAccessToken.split(',');
+        xAccessToken = xAccessToken.trim();
+        xAccessTokenTimestamp = ~~xAccessTokenTimestamp.trim();
       }
-      else
-        state = state.editIn([], 'auth', v => { delete v.token; delete v.authorized; });
+      // antipattern, but only as an exception and it is the fastest method
+      //const state = store.getState();
 
-      return state;
-    });
-      
-    if( contentType ) {
-      if( contentType.includes('application/json') )
+      disp(state => {
+        if (xAccessToken) {
+          if (xAccessToken !== state.getIn('auth', 'token')
+            || xAccessTokenTimestamp > state.getIn('auth', 'timestamp'))
+            state = state.editIn([], 'auth', v => {
+              v.token = xAccessToken;
+              v.timestamp = xAccessTokenTimestamp;
+            });
+        }
+        else
+          state = state.editIn([], 'auth', v => { delete v.token; delete v.timestamp; });
+
+        return state;
+      });
+    }
+
+    if (contentType) {
+      if (contentType.includes('application/json'))
         return response.json();
-      if( contentType.includes('text/') )
+      if (contentType.includes('text/'))
         return response.text();
+      if (contentType.includes('image/') )
+        return response.arrayBuffer();
     }
     // will be caught below
-    throw new TypeError('Oops, we haven\'t right type of response! Status: ' + response.status + ', ' + response.statusText);
-  }).then(json => {
-    if( json === undefined || json === null || (json.constructor !== Object && json.constructor !== Array) )
-      throw new TypeError('Oops, we haven\'t got JSON!' + (json && json.constructor === String ? ' ' + json : ''));
+    throw new TypeError('Oops, we haven\'t right type of response! Status: '
+      + response.status + ', ' + response.statusText + ', content-type: ' + contentType);
+  }).then(result => {
+    if (result === undefined || result === null ||
+      (result.constructor !== Object && result.constructor !== Array && result.constructor !== ArrayBuffer))
+      throw new TypeError('Oops, we haven\'t got data! ' + result);
 
-    success && success.constructor === Function && success(json);
+    success && success.constructor === Function && success(result, opts);
   }).catch(error => {
-    if( process.env.NODE_ENV === 'development' )
+    if (process.env.NODE_ENV === 'development')
       console.log(error);
-    
-    fail && fail.constructor === Function && fail(error);
+
+    fail && fail.constructor === Function && fail(error, opts);
   });
 }
 //------------------------------------------------------------------------------
-export function icoUrl(u, w, h) {
-  return BACKEND_URL + '?'
-    + serializeURIParams({r: {m: 'img', f: 'ico', u: u, w: w, h: w}});
+export function icoUrl(u, w, h, cs) {
+  const r = { m: 'img', f: 'ico', u: u };
+  if( w !== undefined )
+    r.w = w;
+  if( h !== undefined )
+    r.h = h;
+  if( cs !== undefined )
+    r.cs = cs;
+  return BACKEND_URL + '?' + serializeURIParams({r:r});
 }
 //------------------------------------------------------------------------------
 export function imgUrl(u) {
-  return BACKEND_URL + '?' + serializeURIParams({r: {m: 'img', u: u}});
+  return BACKEND_URL + '?' + serializeURIParams({ r: { m: 'img', u: u } });
+}
+//------------------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
+class ZeroTimeout {
+  static timeouts = new Deque([]);
+  static messageName = 'zero-timeout-message';
+
+  static messageHandler(e) {
+    if (e.source === window && e.data === ZeroTimeout.messageName) {
+      e.stopPropagation();
+      if (!ZeroTimeout.timeouts.isEmpty())
+        ZeroTimeout.timeouts.shift()();
+    }
+  }
+
+  static initialize() {
+    window.addEventListener('message', ZeroTimeout.messageHandler, true);
+  }
+}
+//------------------------------------------------------------------------------
+ZeroTimeout.initialize();
+//------------------------------------------------------------------------------
+function setZeroTimeout(fn) {
+  ZeroTimeout.timeouts.push(fn);
+  window.postMessage(ZeroTimeout.messageName, '*');
+}
+//------------------------------------------------------------------------------
+////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
+class JobsQueue {
+  static ldrs = new Deque([1, 1]);
+  static reqs = new Deque([]);
+
+  static end() {
+    JobsQueue.ldrs.push(1);
+    JobsQueue.queue();
+    return true;
+  }
+  
+  static queue() {
+    for(;;) {
+      const job = JobsQueue.reqs.shift();
+  
+      if (job === undefined)
+        break;
+
+      const ldr = JobsQueue.ldrs.shift();
+      
+      if (ldr === undefined) {
+        JobsQueue.reqs.push(job);
+        setZeroTimeout(JobsQueue.queue);
+        break;
+      }
+
+      job.launcher(job.opts, JobsQueue.end,
+        // eslint-disable-next-line
+        () => {
+          if( job.n !== 0 ) {
+            job.n--;
+            JobsQueue.reqs.push(job);
+            return false;
+          }
+          return JobsQueue.end();
+        }
+      );
+    }
+  }
+}
+//------------------------------------------------------------------------------
+batchJob = function (opts, launcher) {
+  JobsQueue.reqs.push({
+    opts: opts,
+    launcher,
+    n: 3
+  });
+  JobsQueue.queue();
 }
 //------------------------------------------------------------------------------

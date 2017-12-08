@@ -4,63 +4,42 @@ import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
 import * as PubSub from 'pubsub-js';
 import uuidv1 from 'uuid/v1';
-import { transform, sfetch, icoUrl } from '../backend';
-import { isVisibleInWindow } from '../util';
-import { nullLink, sscat } from '../store';
 import { LOADING_START_TOPIC, LOADING_DONE_TOPIC } from './Searcher';
+import { nullLink, sscat } from '../store';
 import Card from './DictList/Card';
 import nopic from '../assets/nopic.svg';
 import spinner from '../assets/spinner-dots.svg';
 import bigBug from '../assets/big-bug.svg';
-//import hourglass from '../assets/hourglass.svg';
+import BACKEND_URL, {
+  transform, serializeURIParams, sfetch, batchLinkLoad
+} from '../backend';
 //------------------------------------------------------------------------------
 const style = {
   float: 'right', display: 'block', padding: 4, margin: 0, height: 96,
 };
 //------------------------------------------------------------------------------
-//const styleHourglass = {...style/*, padding: 10*/ };
 const styleBigBug = {...style, padding: 30 };
 //------------------------------------------------------------------------------
 const styleLoading = (a => {
   return {...styleBigBug, WebkitAnimation: a, animation: a};
 })('spinner360 2.5s linear 0s infinite');
 //------------------------------------------------------------------------------
-const styleInvisible = { width: 0, height: 0, position: 'fixed', top: -1 };
-//------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
 class Image extends Component {
-  // componentDidMount() {
-  //   const { opts, url } = this.props;
-  //   sfetch(opts,
-  //     e => this.setState({src: url}),
-  //     e => this.setState({src: bigBug}),
-  //     e => this.setState({src: spinner})
-  //   );
-  // }
+  componentDidMount() {
+    const { r, url } = this.props;
+    batchLinkLoad(r,
+      e => this.setState({src: url}),
+      e => this.setState({src: bigBug}));
+  }
 
-  state = { url: spinner };
+  state = { src: spinner };
 
   render() {
-    const { props, state } = this;
-
-    if( state.url === spinner )
-      return [
-        <img key={1} alt="" src={spinner} style={styleLoading} />,
-        <img key={2} alt="" src={props.url} style={styleInvisible}
-          onLoad={e => this.setState({url: props.url}) }
-          onError={e => this.setState({url: bigBug}) } />
-      ];
-
-    return <img alt="" src={state.url} style={style} />
-
-    /*const { src } = this.state;
+    const { src } = this.state;
     return <Sui.Image src={src}
-      style={src === hourglass
-        ? styleHourglass
-        : src === bigBug
-          ? styleBigBug
-          : src === spinner ? styleLoading : style} />;*/
+      style={src === spinner ? styleLoading : src === bigBug ? styleBigBug : style} />;
   }
 }
 //------------------------------------------------------------------------------
@@ -72,13 +51,13 @@ class Piece extends Component {
   ico = row => {
     if (row) {
       if( row.ОсновноеИзображение && row.ОсновноеИзображение !== nullLink ) {
-        //const r = { r: { m: 'img', f: 'ico', u: row.ОсновноеИзображение, w: 96, h: 96, cs: 16 } };
-        //const url = BACKEND_URL + '?' + serializeURIParams(r);
-        //r.noauth = r.batch = true;
-        return <Image url={icoUrl(row.ОсновноеИзображение, 96, 96, 16)} />;
+        const r = { r: { m: 'img', f: 'ico', u: row.ОсновноеИзображение, w: 96, h: 96, cs: 16 } };
+        const url = BACKEND_URL + '?' + serializeURIParams(r);
+        r.noauth = true;
+        return <Image style={style} url={url} r={r} />;
       }
 
-      return <img alt="" src={nopic} style={style} />;
+      return <Sui.Image src={nopic} style={style} />;
     }
     return null;
   };
@@ -161,59 +140,16 @@ class Piece extends Component {
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
-class AppearSegment extends Component {
-  constructor(props) {
-    super(props);
-    this.isAppear = this.isAppear.bind(this);
-  }
-
+class BottomSegment extends Component {
   id = uuidv1();
-
-  isAppear(e) {
-    if( this.state.isLoading )
-      return;
-
-    if (isVisibleInWindow(document.getElementById(this.id))) {
-      this.setState({ isLoading: true });
-      this.props.appearHandler();
-    }
-  }
-
-  static appearEvents = ['scroll', 'touchmove'];
-
-  addListeners = () => {
-    for (const e of AppearSegment.appearEvents)
-      window.addEventListener(e, this.isAppear);
-  };
-
-  removeListeners = () => {
-    for (const e of AppearSegment.appearEvents)
-      window.removeEventListener(e, this.isAppear);
-  };
-
-  componentWillMount() {
-    this.addListeners();
-  }
-
-  componentWillUnmount() {
-    this.removeListeners();
-  }
-
-  componentDidMount() {
-    this.isAppear();
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-  }
-  
   state = { isLoading: false };
 
   render() {
     // if( process.env.NODE_ENV === 'development' )
-    //   console.log('render AppearSegment');
+    //   console.log('render BottomSegment');
 
-    return <Sui.Segment vertical basic id={this.id} style={{margin:0}}>{this.state.isLoading ?
-      <Sui.Progress color="teal" attached="bottom" percent={100} active={true} /> : null}
+    return <Sui.Segment vertical basic id={this.id}>
+      <Sui.Loader active={this.state.isLoading} />
     </Sui.Segment>;
   }
 }
@@ -230,8 +166,8 @@ class SearcherResults extends Component {
   state = {};
 
   initialize() {
-    this.list = [];
     this.rend = [];
+    this.list = [];
     this.index = 0;
     this.offs = 0;
     return this;
@@ -255,10 +191,14 @@ class SearcherResults extends Component {
     if (obj.index === undefined)
       return;
 
+    if (obj.bottomSegment)
+      obj.bottomSegment.setState({ isLoading: true });
+
     if (obj.index === 0)
       obj.piece = props.category || !props.filter || props.filter.length <= 4 ? 40 : 20;
 
-    obj.emitLoading();
+    if (obj.index === 0)
+      obj.emitLoading();
 
     // Load the rows
     const rr = {
@@ -289,13 +229,55 @@ class SearcherResults extends Component {
       obj.offs = obj.index;
       obj.index = obj.list.length < rr.piece ? undefined : obj.index + rr.piece;
 
-      obj.emitLoadingDone();
-      obj.setState({ index: obj.index });
+      obj.setState({ offset: obj.offs });
+
+      if (obj.offs === 0 || obj.index === undefined)
+        obj.emitLoadingDone();
     }, error => {
+      obj.list = [];
+      obj.offs = obj.index;
+      obj.index = undefined;
+      obj.setState({ offset: obj.offs });
       obj.emitLoadingDone();
-      if( obj.appearSegment )
-        obj.appearSegment.setState({isLoading:false});
     });
+  };
+
+  // isScrolledIntoView(elem) {
+  //   var docViewTop = $(window).scrollTop();
+  //   var docViewBottom = docViewTop + $(window).height();
+  //   var elemTop = $(elem).offset().top;
+  //   return ((elemTop <= docViewBottom) && (elemTop >= docViewTop));
+  //   return (docViewBottom >= elemTop && docViewTop <= elemBottom);
+  // }
+
+  isScrolledIntoView = e => {
+    const r = e.getBoundingClientRect();
+    // Only completely visible elements return true:
+    // return r.top >= 0 && r.bottom <= window.innerHeight;
+    // Partially visible elements return true:
+    return r.top < window.innerHeight && r.bottom >= 0;
+  };
+
+  isAppear = e => {
+    const bs = this.bottomSegment;
+
+    if (bs && bs.id !== this.bottomSegmentId
+      && this.isScrolledIntoView(document.getElementById(bs.id))) {
+      this.bottomSegmentId = bs.id;
+      this.loadMoreRows();
+    }
+  };
+
+  appearEvents = ['scroll', 'touchmove'];
+
+  addListeners = () => {
+    for (const e of this.appearEvents)
+      window.addEventListener(e, this.isAppear);
+  };
+
+  removeListeners = () => {
+    for (const e of this.appearEvents)
+      window.removeEventListener(e, this.isAppear);
   };
 
   restoreScrollPosition = () => {
@@ -304,10 +286,12 @@ class SearcherResults extends Component {
   };
 
   componentWillMount() {
+    this.addListeners();
     this.initialize();
   }
 
   componentWillUnmount() {
+    this.removeListeners();
   }
 
   componentWillReceiveProps(nextProps) {
@@ -320,8 +304,8 @@ class SearcherResults extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-     if (this.index === 0)
-       this.loadMoreRows();
+    if (this.index === 0)
+      this.loadMoreRows();
     //this.restoreScrollPosition();
   }
 
@@ -329,25 +313,32 @@ class SearcherResults extends Component {
     // if( process.env.NODE_ENV === 'development' )
     //   console.log('render SearcherResults');
 
-    const { state, list, rend, offs } = this;
-    const { index } = state;
+    const { rend, list, offs } = this;
 
-    // remove AppearSegment
-    if( rend.length !== 0 )
+    while (rend.length > 0) {
+      const type = rend[rend.length - 1].props.type;
+      if (!type || type.search(/BottomSegment|Divider/g) < 0)
+        break;
       rend.pop();
-    
+    }
+
+    let l = rend.length;
+
     for (let i = 0; i < list.length; i += 2) {
-      const idx = offs + i;
-      if (idx % 2 === 0) {
-        if( rend.length !== 0 )
-          rend.push(<Sui.Divider key={'d' + rend.length} fitted />);
-        rend.push(<Piece key={rend.length} r0={list[i]} r1={list[i + 1]} />);
+      const idx = offs + i / 2;
+      if (i % 2 === 0) {
+        if (l !== 0)
+          rend[l++] = <Sui.Divider key={'d' + idx} fitted />;
+        rend[l++] = <Piece key={idx} r0={list[i]} r1={list[i + 1]} />;
       }
     }
 
-    if (index !== undefined && list.length !== 0)
-      rend.push(<AppearSegment appearHandler={this.loadMoreRows}
-        key={rend.length} ref={e => this.appearSegment = e} />);
+    if (list.length === this.piece ) {
+      //rend[l++] = <Sui.Divider type="Divider" key={uuidv1()} fitted />;
+      rend[l] = <BottomSegment type="BottomSegment"
+        key={l} ref={e => this.bottomSegment = e} />;
+      l++;
+    }
 
     return rend;
   }

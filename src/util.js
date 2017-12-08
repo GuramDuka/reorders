@@ -92,3 +92,12 @@ export function scrollXY() {
   };
 }
 //------------------------------------------------------------------------------
+export function isVisibleInWindow(e, complete) {
+  const r = e.getBoundingClientRect();
+  // completely visible elements return true:
+  if( complete )
+    return r.top >= 0 && r.bottom <= window.innerHeight;
+  // Partially visible elements return true:
+  return r.top < window.innerHeight && r.bottom >= 0;
+};
+//------------------------------------------------------------------------------
