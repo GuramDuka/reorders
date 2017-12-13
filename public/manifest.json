@@ -20,7 +20,7 @@
   ],
   "lang": "ru-RU",
   "start_url": "index.html",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#000000",
   "background_color": "#ffffff"

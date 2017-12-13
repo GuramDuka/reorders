@@ -92,12 +92,36 @@ export function scrollXY() {
   };
 }
 //------------------------------------------------------------------------------
+export function windowSize() {
+	//window.devicePixelRatio = 1;
+	return [
+		window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
+		window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight,
+		window.devicePixelRatio
+	];
+}
+//------------------------------------------------------------------------------
+// http://blog.grayghostvisuals.com/js/detecting-scroll-position/
 export function isVisibleInWindow(e, complete) {
   const r = e.getBoundingClientRect();
+  const h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
   // completely visible elements return true:
   if( complete )
-    return r.top >= 0 && r.bottom <= window.innerHeight;
+    return r.top >= 0 && r.bottom <= h;
   // Partially visible elements return true:
-  return r.top < window.innerHeight && r.bottom >= 0;
+  return r.top < h && r.bottom >= 0;
 };
+//------------------------------------------------------------------------------
+// Determine if an element is in the visible viewport
+export function isInViewport(element) {
+  var rect = element.getBoundingClientRect();
+  var html = document.documentElement;
+  return (
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <= (window.innerHeight || html.clientHeight) &&
+    rect.right <= (window.innerWidth || html.clientWidth)
+  );
+}
+//The above function could be used by adding a “scroll” event listener to the window and then calling isInViewport().
 //------------------------------------------------------------------------------

@@ -10,129 +10,134 @@ import { nullLink, sscat } from '../store';
 import { LOADING_START_TOPIC, LOADING_DONE_TOPIC } from './Searcher';
 import Card from './DictList/Card';
 import nopic from '../assets/nopic.svg';
-import spinner from '../assets/spinner-dots.svg';
-import bigBug from '../assets/big-bug.svg';
+//import spinner from '../assets/spinner-dots.svg';
+//import bigBug from '../assets/big-bug.svg';
 //import hourglass from '../assets/hourglass.svg';
-//------------------------------------------------------------------------------
-const style = {
-  float: 'right', display: 'block', padding: 4, margin: 0, height: 96,
-};
-//------------------------------------------------------------------------------
-//const styleHourglass = {...style/*, padding: 10*/ };
-const styleBigBug = {...style, padding: 30 };
-//------------------------------------------------------------------------------
-const styleLoading = (a => {
-  return {...styleBigBug, WebkitAnimation: a, animation: a};
-})('spinner360 2.5s linear 0s infinite');
-//------------------------------------------------------------------------------
-const styleInvisible = { width: 0, height: 0, position: 'fixed', top: -1 };
+import styles from './SearcherResults.css';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
-class Image extends Component {
-  // componentDidMount() {
-  //   const { opts, url } = this.props;
-  //   sfetch(opts,
-  //     e => this.setState({src: url}),
-  //     e => this.setState({src: bigBug}),
-  //     e => this.setState({src: spinner})
-  //   );
-  // }
+// class Image extends Component {
+//   state = { url: hourglass };
 
-  state = { url: spinner };
+//   componentDidMount() {
+//     this.isMounted_ = true;
+//   }
 
-  render() {
-    const { props, state } = this;
+//   componentWillUnmount() {
+//     delete this.isMounted_;
+//   }
 
-    if( state.url === spinner )
-      return [
-        <img key={1} alt="" src={spinner} style={styleLoading} />,
-        <img key={2} alt="" src={props.url} style={styleInvisible}
-          onLoad={e => this.setState({url: props.url}) }
-          onError={e => this.setState({url: bigBug}) } />
-      ];
+//   loadHandler = e => {
+//     const { props } = this;
 
-    return <img alt="" src={state.url} style={style} />
+//     this.isMounted_ && sfetch({ noauth: true, batch: true, r: props.r },
+//       result => this.isMounted_ && this.setState({ url: props.url }),
+//       error => this.isMounted_ && this.setState({ url: bigBug }),
+//       opts => this.isMounted_ && this.setState({ url: spinner }));
+//   };
 
-    /*const { src } = this.state;
-    return <Sui.Image src={src}
-      style={src === hourglass
-        ? styleHourglass
-        : src === bigBug
-          ? styleBigBug
-          : src === spinner ? styleLoading : style} />;*/
-  }
-}
+//   errorHandler = e => this.isMounted_ && this.setState({ url: bigBug });
+
+//   render() {
+//     // return <img alt="" src={this.props.url} className="regular"
+//     //   onError={e => this.setState({url: bigBug}) } />;
+//     const { state } = this;
+//     const { url } = state;
+
+//     // if ( state.url === spinner)
+//     //   return [
+//     //     <img key={1} alt="" src={spinner} className={styles.sploading} />,
+//     //     <img key={2} alt="" src={props.url} className={styles.offscreen}
+//     //       onLoad={this.loadHandler}
+//     //       onError={this.errorHandler} />
+//     //   ];
+
+//     return <img alt="" src={url}
+//       onLoad={url === hourglass ? this.loadHandler : null}
+//       className={url === spinner
+//         ? styles.sploading
+//         : styles.regular} />
+//   }
+// }
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
-//------------------------------------------------------------------------------
-const lblStyle = { paddingLeft: 2, paddingRight: 2 };
 //------------------------------------------------------------------------------
 class Piece extends Component {
   ico = row => {
     if (row) {
-      if( row.ОсновноеИзображение && row.ОсновноеИзображение !== nullLink ) {
-        //const r = { r: { m: 'img', f: 'ico', u: row.ОсновноеИзображение, w: 96, h: 96, cs: 16 } };
-        //const url = BACKEND_URL + '?' + serializeURIParams(r);
-        //r.noauth = r.batch = true;
-        return <Image url={icoUrl(row.ОсновноеИзображение, 96, 96, 16)} />;
+      if (row.ОсновноеИзображение && row.ОсновноеИзображение !== nullLink) {
+        const w = ~~styles.icoWidth.substring(0, styles.icoWidth.length - 2);
+        const h = ~~styles.icoHeight.substring(0, styles.icoHeight.length - 2);
+        // const r = icoR(row.ОсновноеИзображение, w, h, 16);
+        // return <Image url={icoUrl(row.ОсновноеИзображение, w, h, 16)} r={r} />;
+        return <img alt="BROKEN"
+          src={icoUrl(row.ОсновноеИзображение, w, h, 16)}
+          className={styles.regular} />;
       }
 
-      return <img alt="" src={nopic} style={style} />;
+      return <img alt="" src={nopic} className={styles.regular} />;
     }
     return null;
   };
 
   content = row => row ? sscat(' ', row.Наименование, row.Артикул, row.Производитель) : null;
 
-  extraContent = row => row ?
-    <Sui.List style={{ left: 0, top: 0, position: 'absolute', zIndex: 100, marginLeft: 1 }}>
-      <Sui.List.Item style={{ padding: 0, margin: 0, marginTop: 0 }}>
-        <Sui.Label size="small" image color="orange" style={lblStyle}>
-          <Sui.Icon name="hashtag" style={{ marginRight: 2 }} />
+  extraContent = (row, col) => row ?
+    <Sui.List className={styles.lst}>
+      <Sui.List.Item className={styles.itm}>
+        <Sui.Label size="small" image color="orange" className={styles.lbl}>
+          <Sui.Icon name="hashtag" className={styles.icn} />
           <strong>{row.Код}</strong>
         </Sui.Label>
       </Sui.List.Item>
-      <Sui.List.Item style={{ padding: 0, margin: 0, marginTop: 1 }}>
-        <Sui.Label size="small" image color="teal" style={lblStyle}>
-          <Sui.Icon name="rub" style={{ marginRight: 2 }} />
+      <Sui.List.Item className={styles.itm}>
+        <Sui.Label size="small" image color="teal" className={styles.lbl}>
+          <Sui.Icon name="rub" className={styles.icn} />
           <strong>{row.Цена}</strong>
         </Sui.Label>
       </Sui.List.Item>
-      <Sui.List.Item style={{ padding: 0, margin: 0, marginTop: 1 }}>
-        <Sui.Label size="small" image color="violet" style={lblStyle}>
-          <Sui.Icon name="tag" style={{ marginRight: 2 }} />
+      <Sui.List.Item className={styles.itm}>
+        <Sui.Label size="small" image color="violet" className={styles.lbl}>
+          <Sui.Icon name="tag" className={styles.icn} />
           <strong>{row.Остаток}</strong>
         </Sui.Label>
-      </Sui.List.Item>
+      </Sui.List.Item>{process.env.NODE_ENV === 'development' ?
+        <Sui.List.Item className={styles.itm}>
+          <Sui.Label size="small" image color="violet" className={styles.lbl}>
+            <Sui.Icon name="slack" className={styles.icn} />
+            <strong>{this.props.index + col}</strong>
+          </Sui.Label>
+        </Sui.List.Item> : null}
     </Sui.List> : null;
 
   handleClick = i => this.setState({ expanded: 'r' + i });
 
-  grid = (r0, r1) => <Sui.Grid columns="2" divided style={{ margin: 0, padding: 0 }}>
-    <Sui.Grid.Row style={{ margin: 0, paddingTop: 0, paddingBottom: 0 }}>
-      <Sui.Grid.Column onClick={e => this.handleClick(0)} style={{ margin: 0, padding: 0 }}>
-        {this.extraContent(r0)}
-        {this.ico(r0)}
-      </Sui.Grid.Column>
-      <Sui.Grid.Column onClick={e => this.handleClick(1)} style={{ margin: 0, padding: 0 }}>
-        {this.extraContent(r1)}
-        {this.ico(r1)}
-      </Sui.Grid.Column>
-    </Sui.Grid.Row>
-    <Sui.Grid.Row style={{ margin: 0, paddingTop: 0, paddingBottom: 0 }}>
-      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(0)} style={{ margin: 0, padding: 0 }}>
-        {this.content(r0)}
-      </Sui.Grid.Column>
-      <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(1)} style={{ margin: 0, padding: 0 }}>
-        {this.content(r1)}
-      </Sui.Grid.Column>
-    </Sui.Grid.Row>
-  </Sui.Grid>;
+  grid = (r0, r1) =>
+    <Sui.Grid columns="2" divided className={styles.grid}>
+      <Sui.Grid.Row className={styles.row}>
+        <Sui.Grid.Column onClick={e => this.handleClick(0)} className={styles.mp0}>
+          {this.extraContent(r0, 0)}
+          {this.ico(r0)}
+        </Sui.Grid.Column>
+        <Sui.Grid.Column onClick={e => this.handleClick(1)} className={styles.mp0}>
+          {this.extraContent(r1, 1)}
+          {this.ico(r1)}
+        </Sui.Grid.Column>
+      </Sui.Grid.Row>
+      <Sui.Grid.Row className={styles.row}>
+        <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(0)} className={styles.mp0}>
+          {this.content(r0)}
+        </Sui.Grid.Column>
+        <Sui.Grid.Column textAlign="center" onClick={e => this.handleClick(1)} className={styles.mp0}>
+          {this.content(r1)}
+        </Sui.Grid.Column>
+      </Sui.Grid.Row>
+    </Sui.Grid>;
 
   closeCardHandler = e => this.setState({ expanded: undefined });
 
-  card = r => <Card
+  card = r => <Card id={this.props.id}
     expanded
     key={r.Ссылка}
     link={r.Ссылка}
@@ -155,11 +160,16 @@ class Piece extends Component {
     if (state.expanded !== undefined)
       return this.card(props[state.expanded]);
 
-    return this.grid(props.r0, props.r1);
+    return <div id={props.id} className={styles.line}>
+      {this.grid(props.r0, props.r1)}
+      <Sui.Divider fitted />
+    </div>;
   }
 }
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
+/*const AppearType = newEnum({ TOP: 1, BOTTOM: 2 });
 //------------------------------------------------------------------------------
 class AppearSegment extends Component {
   constructor(props) {
@@ -168,12 +178,17 @@ class AppearSegment extends Component {
   }
 
   id = uuidv1();
+  appeared = false;
 
   isAppear(e) {
-    if( this.state.isLoading )
+    if (this.appeared)
       return;
 
-    if (isVisibleInWindow(document.getElementById(this.id))) {
+    const el = document.getElementById(this.id);
+
+    if (el && isVisibleInWindow(el)) {
+      this.appeared = true;
+      this.removeListeners();
       this.setState({ isLoading: true });
       this.props.appearHandler();
     }
@@ -181,14 +196,14 @@ class AppearSegment extends Component {
 
   static appearEvents = ['scroll', 'touchmove'];
 
-  addListeners = () => {
-    for (const e of AppearSegment.appearEvents)
-      window.addEventListener(e, this.isAppear);
+  addListeners = e => {
+    for (const n of AppearSegment.appearEvents)
+      window.addEventListener(n, this.isAppear);
   };
 
-  removeListeners = () => {
-    for (const e of AppearSegment.appearEvents)
-      window.removeEventListener(e, this.isAppear);
+  removeListeners = e => {
+    for (const n of AppearSegment.appearEvents)
+      window.removeEventListener(n, this.isAppear);
   };
 
   componentWillMount() {
@@ -199,26 +214,40 @@ class AppearSegment extends Component {
     this.removeListeners();
   }
 
-  componentDidMount() {
-    this.isAppear();
-  }
+  // componentDidMount() {
+  //   this.isAppear();
+  // }
 
-  componentDidUpdate(prevProps, prevState) {
-  }
-  
   state = { isLoading: false };
 
   render() {
     // if( process.env.NODE_ENV === 'development' )
     //   console.log('render AppearSegment');
+    const { props, state } = this;
+    const { atype } = props;
+    const attached = atype === AppearType.TOP ? 'top' : 'bottom';
 
-    return <Sui.Segment vertical basic id={this.id} style={{margin:0}}>{this.state.isLoading ?
-      <Sui.Progress color="teal" attached="bottom" percent={100} active={true} /> : null}
+    return <Sui.Segment vertical basic id={this.id} style={{ padding: 0, margin: 0 }}>{state.isLoading ?
+      <Sui.Progress color="teal" attached={attached} percent={100} active={true} /> : null}
     </Sui.Segment>;
   }
-}
+}*/
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
+const appearEvents = ['scroll', 'touchmove'];
+//------------------------------------------------------------------------------
+function addAppearListeners(w, e) {
+  if (w)
+    for (const n of appearEvents)
+      w.addEventListener(n, e);
+}
+//------------------------------------------------------------------------------
+function removeAppearListeners(w, e) {
+  if (w)
+    for (const n of appearEvents)
+      w.removeEventListener(n, e);
+}
 //------------------------------------------------------------------------------
 class SearcherResults extends Component {
   static mapStateToProps(state, ownProps) {
@@ -226,45 +255,48 @@ class SearcherResults extends Component {
   }
 
   static connectOptions = { withRef: true };
-  
-  state = {};
 
-  initialize() {
-    this.list = [];
-    this.rend = [];
-    this.index = 0;
-    this.offs = 0;
-    return this;
+  constructor(props) {
+    super(props);
+    this.itemAppearHandler = this.itemAppearHandler.bind(this);
+    this.windowResizeHandler = this.windowResizeHandler.bind(this);
   }
 
+  piece = 40; // 40 items, 20 lines
+  size = 60; // lines: must be (size % (piece / 2)) === 0
+  state = { list: [], offs: 0, rndr: [] };
+
   emitLoading() {
-    PubSub.publishSync(LOADING_START_TOPIC, this.offs + this.list.length);
+    PubSub.publishSync(LOADING_START_TOPIC, this.state.list.length);
   }
 
   emitLoadingDone() {
     // idea from https://www.andrewhfarmer.com/component-communication/
     // implementation https://github.com/mroderick/PubSubJS
-    PubSub.publishSync(LOADING_DONE_TOPIC, this.offs + this.list.length);
+    PubSub.publishSync(LOADING_DONE_TOPIC, this.state.list.length);
   }
 
-  loadMoreRows = () => {
-    const obj = this;
-    const { props } = obj;
-
-    // no more rows
-    if (obj.index === undefined)
+  loadRows = (opts, success, fail) => {
+    if (!this.isMounted_ || this.fetchId)
       return;
 
-    if (obj.index === 0)
-      obj.piece = props.category || !props.filter || props.filter.length <= 4 ? 40 : 20;
+    let { index, offs, list } = opts;
 
-    obj.emitLoading();
+    if (index === undefined)
+      index = opts;
 
-    // Load the rows
+    if (offs === undefined)
+      offs = this.state.offs;
+
+    if (list === undefined)
+      list = this.state.list;
+
+    const obj = this;
+    const { props } = obj;
     const rr = {
       type: 'Номенклатура',
       piece: obj.piece,
-      index: obj.index
+      index: index
     };
 
     if (props.order)
@@ -284,72 +316,148 @@ class SearcherResults extends Component {
       r: rr
     };
 
-    sfetch({r:r}, json => {
-      obj.list = transform(json).rows;
-      obj.offs = obj.index;
-      obj.index = obj.list.length < rr.piece ? undefined : obj.index + rr.piece;
+    obj.fetchId = sfetch({ r: r }, json => {
+      delete obj.fetchId;
+      if (!obj.isMounted_)
+        return;
+
+      const { rows } = transform(json);
+      const rlength = rows.length;
+
+      for (let i = 0; i < rlength; i++)
+        list[index + i] = rows[i];
 
       obj.emitLoadingDone();
-      obj.setState({ index: obj.index });
+      success && success.constructor === Function && success({ list: list, offs: offs });
     }, error => {
+      delete obj.fetchId;
+      if (!obj.isMounted_)
+        return;
+
+      // if( error.message.indexOf('no more rows') >= 0 ) {}
       obj.emitLoadingDone();
-      if( obj.appearSegment )
-        obj.appearSegment.setState({isLoading:false});
+      fail && fail.constructor === Function && fail(error);
     });
+    obj.emitLoading();
   };
 
-  restoreScrollPosition = () => {
-    const { scroll } = this.props;
-    window.scroll(scroll ? scroll.x : 0, scroll ? scroll.y : 0);
+  itemAppearHandler(e) {
+    if (!this.isMounted_)
+      return;
+
+    const { state, piece, size } = this;
+    const { rndr } = state;
+    const lastItem = rndr.length !== 0 ? rndr[rndr.length - 1] : undefined;
+
+    if (lastItem && lastItem.props.itemIndex + 1 !== size) {
+      const el = document.getElementById(lastItem.props.id);
+
+      if (el && isVisibleInWindow(el, true)) {
+        const { length } = state.list;
+
+        if ((length % piece) === 0)
+          this.loadRows(length, result => this.setState(result));
+      }
+    }
   };
+
+  windowResizeHandler(e) {
+    if (this.isMounted_)
+      this.forceUpdate();
+  }
+
+  // restoreScrollPosition = () => {
+  //   const { scroll } = this.props;
+  //   window.scroll(scroll ? scroll.x : 0, scroll ? scroll.y : 0);
+  // };
 
   componentWillMount() {
-    this.initialize();
+    addAppearListeners(window, this.itemAppearHandler);
+    window.addEventListener('resize', this.windowResizeHandler);
   }
 
   componentWillUnmount() {
-  }
-
-  componentWillReceiveProps(nextProps) {
-    this.initialize();
+    delete this.isMounted_;
+    removeAppearListeners(window, this.itemAppearHandler);
+    window.removeEventListener('resize', this.windowResizeHandler);
   }
 
   componentDidMount() {
-    this.loadMoreRows();
-    //this.restoreScrollPosition();
+    this.isMounted_ = true;
+    this.loadRows({ index: 0, offs: 0, list: [] },
+      result => this.setState(result));
   }
 
   componentDidUpdate(prevProps, prevState) {
-     if (this.index === 0)
-       this.loadMoreRows();
-    //this.restoreScrollPosition();
+    // this.restoreScrollPosition();
+    // if (process.env.NODE_ENV === 'development')
+    //   console.log('SearcherResults.componentDidUpdate');
+
+    if (this.isMounted_ && this.props !== prevProps)
+      this.loadRows({ index: 0, offs: 0, list: [] },
+        result => this.setState({ ...result, rndr: [] }));
+    
+    if (this.props === prevProps && this.state.offs > prevState.offs)
+      window.scroll(undefined, 0);
   }
 
+  rkey = 1;
+
   render() {
-    // if( process.env.NODE_ENV === 'development' )
-    //   console.log('render SearcherResults');
+    if (process.env.NODE_ENV === 'development')
+      console.log('render SearcherResults', this.state.list.length);
 
-    const { state, list, rend, offs } = this;
-    const { index } = state;
+    const { state, size } = this;
+    const { rndr } = state;
+    const { list, offs } = state;
+    const roffs = offs >> 1;
+    const rlength = (list.length >> 1) + (list.length & 0b1);
+    const rl = Math.min(rlength, roffs + size);
 
-    // remove AppearSegment
-    if( rend.length !== 0 )
-      rend.pop();
-    
-    for (let i = 0; i < list.length; i += 2) {
-      const idx = offs + i;
-      if (idx % 2 === 0) {
-        if( rend.length !== 0 )
-          rend.push(<Sui.Divider key={'d' + rend.length} fitted />);
-        rend.push(<Piece key={rend.length} r0={list[i]} r1={list[i + 1]} />);
-      }
-    }
+    for (let j = rndr.length, i = roffs + j, k = i << 1; i < rl; i++ , j++ , k += 2)
+      rndr[j] = <Piece
+        id={uuidv1()}
+        key={this.rkey++}
+        itemIndex={j}
+        index={k}
+        r0={list[k]}
+        r1={list[k + 1]} />;
 
-    if (index !== undefined && list.length !== 0)
-      rend.push(<AppearSegment appearHandler={this.loadMoreRows}
-        key={rend.length} ref={e => this.appearSegment = e} />);
+    const load = offs =>
+      this.loadRows({ index: offs, offs: offs },
+        result => this.setState({ ...result, rndr: [] }));
 
-    return rend;
+    return <Sui.Segment.Group className={styles.segment}>{offs === 0 ? null :
+      <Sui.Segment>
+        <Sui.Button.Group>
+          <Sui.Button primary onClick={e => load(0)}>
+            Начало
+          </Sui.Button>
+          <Sui.Button.Or text="|" />
+          <Sui.Button color="teal" onClick={e => load(offs - (size << 1))}>
+            Назад
+          </Sui.Button>
+        </Sui.Button.Group>
+      </Sui.Segment>}
+      <Sui.Segment className={styles.segment}>
+        {rndr}
+      </Sui.Segment>{offs === 0 && rndr.length !== size ? null :
+      <Sui.Segment>
+        <Sui.Button.Group>{offs === 0 || rndr.length !== size ? null :
+          <Sui.Button primary onClick={e => load(0)}>
+            Начало
+          </Sui.Button>}{offs === 0 || rndr.length !== size ? null :
+          <Sui.Button.Or text="|" />}{offs === 0 || rndr.length !== size ? null :
+          <Sui.Button color="teal" onClick={e => load(offs - (size << 1))}>
+            Назад
+          </Sui.Button>}{offs === 0 || rndr.length !== size ? null :
+          <Sui.Button.Or text="|" />}{rndr.length !== size ? null :
+          <Sui.Button positive onClick={e => load(offs + (size << 1))}>
+            Дай
+          </Sui.Button>}
+        </Sui.Button.Group>
+      </Sui.Segment>}
+    </Sui.Segment.Group>;
   }
 }
 //------------------------------------------------------------------------------

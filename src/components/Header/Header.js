@@ -7,6 +7,7 @@ import disp from '../../store';
 import Searcher from '../Searcher';
 import Categories from '../Categories';
 import BarsMenu from './BarsMenu';
+import styles from './Header.css';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -96,7 +97,7 @@ class Header extends Component {
 
     const { path } = this.props;
     
-    return <Sui.Menu attached="top" style={{left: 0, top: 0, height: 44, position: 'fixed', zIndex: 1000 }}>
+    return <Sui.Menu attached="top" className={styles.header}>
       <Sui.Menu.Item active={false} icon="bars" onClick={e => this.barsMenu.toggleIsOpen()} />
       <BarsMenu path={[...path, 'menu']} ref={e => this.barsMenu = this.eRef(e)} onClickItem={this.switchView} />
       <Categories path={[...path, 'categories']} />

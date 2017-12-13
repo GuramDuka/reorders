@@ -1,0 +1,114 @@
+/*
+ * https://codeburst.io/4-four-ways-to-style-react-components-ac6f323da822
+ * https://medium.com/@pioul/modular-css-with-react-61638ae9ea3e
+ */
+
+ /*
+ * https://npm.taobao.org/package/postcss-modules-values
+ * make local aliases to imported values
+ */
+@value small as bp-small, medium as bp-medium, large as bp-large from "../css/breackpoints.css";
+
+@keyframes spinner360 {
+  from {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  to {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+
+@value lineHeight: 170px;
+
+:local(.mp0) {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+:local(.grid) {
+  composes: mp0;
+  height: calc(100% - 1px) !important;
+  overflow: hidden !important;
+}
+
+:local(.line) {
+  composes: mp0;
+  height: lineHeight !important;
+  overflow: hidden !important;
+}
+
+:local(.offscreen) {
+  composes: mp0;
+  border: 0;
+  width: 0;
+  height: 0;
+  position: fixed;
+  top: -1;
+  display: none;
+}
+
+@value icoWidth: 128px;
+@value icoHeight: 128px;
+
+:local(.sploading) {
+  float: right;
+  display: block;
+  padding: 10px;
+  margin: 0;
+  height: icoHeight;
+  animation: spinner360 2.5s linear 0s infinite;
+}
+
+:local(.regular) {
+  float: right;
+  display: block;
+  padding: 4px;
+  margin: 0;
+  height: icoHeight;
+}
+
+:local(.lbl) {
+  padding-left: 2;
+  padding-right: 2;
+}
+
+:local(.icn) {
+  margin-right: 2;
+}
+
+:local(.row) {
+  margin: 0;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+:local(.lst) {
+  left: 0;
+  top: 0;
+  position: absolute;
+  z-index: 100;
+  margin-left: 1;
+}
+
+:local(.itm) {
+  composes: mp0;
+  margin-top: 2px !important;
+}
+
+:local(.scrollLst) {
+  composes: mp0;
+  border: 0;
+  max-height: 100%;
+  overflow: auto;
+}
+
+:local(.segment) {
+  composes: mp0;
+}
+
+:local(.font50pct) {
+  font-size: 50% !important;
+}

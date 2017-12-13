@@ -1,0 +1,47 @@
+/*
+ * https://npm.taobao.org/package/postcss-modules-values
+ * https://stackoverflow.com/questions/11404744/css-media-queries-max-width-or-max-height
+ */
+@value small: screen and (orientation: portrait) and (max-width: 599px);
+@value medium: screen and (orientation: portrait) and (min-width: 600px) and (max-width: 959px);
+@value large: screen and (orientation: portrait) and (min-width: 960px);
+
+/*
+ * https://responsivedesign.is/develop/browser-feature-support/media-queries-for-common-device-breakpoints/
+ */
+
+@value Smartphones: only screen and (min-device-width: 320px) and (max-device-width: 480px);
+@value SmartphonesLandscape: only screen and (min-width: 321px) and (orientation: landscape);
+@value SmartphonesPortrait: only screen and (max-width: 320px) and (orientation: portrait);
+
+@value iPads: only screen and (min-device-width: 768px) and (max-device-width: 1024px);
+@value iPadsLandscape: only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (orientation: landscape);
+@value iPadsPortrait: only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (orientation: portrait);
+
+@value iPad3landscape: only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (orientation: landscape) and (-webkit-min-device-pixel-ratio: 2);
+@value iPad3Portrait: only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (orientation: portrait) and (-webkit-min-device-pixel-ratio: 2);
+
+@value DesktopsAndLaptops: only screen and (min-width: 1224px);
+
+@value LargeScreens: only screen  and (min-width: 1824px);
+
+@value iPhone4Landscape: only screen and (min-device-width: 320px) and (max-device-width: 480px) and (orientation: landscape) and (-webkit-min-device-pixel-ratio: 2);
+@value iPhone4Portrait: only screen and (min-device-width: 320px) and (max-device-width: 480px) and (orientation: portrait) and (-webkit-min-device-pixel-ratio: 2);
+
+@value iPhone5Landscape: only screen and (min-device-width: 320px) and (max-device-height: 568px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 2);
+@value iPhone5Portrait: only screen and (min-device-width: 320px) and (max-device-height: 568px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 2);
+
+@value iPhone6Landscape: only screen and (min-device-width: 375px) and (max-device-height: 667px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 2);
+@value iPhone6Portrait: only screen and (min-device-width: 375px) and (max-device-height: 667px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 2);
+
+@value iPhone6PlusLandscape: only screen and (min-device-width: 414px) and (max-device-height: 736px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 2);
+@value iPhone6PlusPortrait: only screen and (min-device-width: 414px) and (max-device-height: 736px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 2);
+
+@value SamsungGalaxyS3Landscape: only screen and (min-device-width: 320px) and (max-device-height: 640px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 2);
+@value SamsungGalaxyS3Portrait: only screen and (min-device-width: 320px) and (max-device-height: 640px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 2);
+
+@value SamsungGalaxyS4Landscape: only screen and (min-device-width: 320px) and (max-device-height: 640px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 3);
+@value SamsungGalaxyS4Portrait: only screen and (min-device-width: 320px) and (max-device-height: 640px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 3);
+
+@value SamsungGalaxyS5Landscape: only screen and (min-device-width: 360px) and (max-device-height: 640px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 3);
+@value SamsungGalaxyS5Portrait: only screen and (min-device-width: 360px) and (max-device-height: 640px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 3);

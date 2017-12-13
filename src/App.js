@@ -1,11 +1,12 @@
 //------------------------------------------------------------------------------
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
-import * as Sui from 'semantic-ui-react';
+//import * as Sui from 'semantic-ui-react';
 //import semanticLogo from './assets/semantic-logo.png'
 import './css/App.css';
 import Header from './components/Header/Header';
 import Body from './components/Body';
+import headerStyles from './components/Header/Header.css';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
@@ -62,10 +63,13 @@ class App extends Component {
     return [
       <Header key={0} path={['header']} />,
 
-      <Sui.Segment key={1} vertical style={{margin:0,height:44,padding:0}}>
-      </Sui.Segment>,
+      //<Sui.Segment key={1} vertical style={{margin:0,height:44,padding:0}}>
+      //</Sui.Segment>,
 
-      <Body key={2} path={['body']} />/*,
+      <div key={1} className={headerStyles.underHeader}>
+        <Body path={['body']} />
+      </div>
+      /*,
         
       <Sui.Segment key={2} vertical>
         <Sui.Container textAlign="center">

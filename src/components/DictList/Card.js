@@ -182,7 +182,7 @@ class Card extends Component {
     const expandedString = (~~!!expanded).toString();
 
     return (
-      <Sui.Card fluid style={{marginLeft: 0, marginRight: 0, marginTop: 0, marginBottom: 0}}>
+      <Sui.Card id={props.id} fluid style={{marginLeft: 0, marginRight: 0, marginTop: 0, marginBottom: 0}}>
         <Sui.Card.Content style={{padding: '.25em'}}>
           {expanded ? img : null}
           <Sui.Card.Header style={{fontSize: '87%'}} expanded={expandedString} onClick={this.toggleCard}>

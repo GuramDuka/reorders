@@ -37,9 +37,7 @@ class Body extends Component {
       case 'products' :
         return <DictListView path={['products', 'list']} />;
       case 'searcherResults' :
-        return <Sui.Segment style={{padding: 0, margin: 0}}>
-          <SearcherResults path={['searcher']} />
-         </Sui.Segment>;
+        return <SearcherResults path={['searcher']} />;
       case 'login' :
         return <Login path={['auth']} />;
       case 'profile' :

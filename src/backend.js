@@ -150,12 +150,12 @@ export function sfetch(opts, success, fail, start) {
   if (opts.cache === undefined)
     opts.cache = 'default';
 
-  if (opts.method === 'PUT' && opts.r !== undefined )
+  if (opts.method === 'PUT' && opts.r !== undefined)
     opts.body = JSON.stringify(opts.r);
 
   let authData;
 
-  if( !opts.noauth ) {
+  if (!opts.noauth) {
     // send auth data
     // antipattern, but only as an exception and it is the fastest method
     const auth = store.getState().getIn([], 'auth');
@@ -189,24 +189,22 @@ export function sfetch(opts, success, fail, start) {
 
   let url = BACKEND_URL;
 
-  if( opts.method === 'GET' && opts.r !== undefined )
+  if (opts.method === 'GET' && opts.r !== undefined)
     url += '?' + serializeURIParams({ r: opts.r });
 
-  if( opts.batch ) {
-    const b = {...opts};
+  if (opts.batch) {
+    const b = { ...opts };
     delete b.batch;
     batchJob(b, (bOpts, bSuccess, bFail) => {
       sfetch(bOpts,
-        result => bSuccess() && success(),
-        error => bFail() && fail(),
-        sOpts => start(sOpts));
+        result => bSuccess() && success && success.constructor === Function && success(result),
+        error => bFail() && fail && fail.constructor === Function && fail(error),
+        start && start.constructor === Function ? sOpts => start(sOpts) : undefined);
     });
     return;
   }
 
-  start && start.constructor === Function && start(opts);
-
-  return fetch(url, opts).then(response => {
+  const fetchId = fetch(url, opts).then(response => {
     const contentType = response.headers.get('content-type');
 
     if (authData) {
@@ -242,7 +240,7 @@ export function sfetch(opts, success, fail, start) {
         return response.json();
       if (contentType.includes('text/'))
         return response.text();
-      if (contentType.includes('image/') )
+      if (contentType.includes('image/'))
         return response.arrayBuffer();
     }
     // will be caught below
@@ -260,21 +258,37 @@ export function sfetch(opts, success, fail, start) {
 
     fail && fail.constructor === Function && fail(error, opts);
   });
+
+  start && start.constructor === Function && start(opts);
+
+  return fetchId;
+}
+//------------------------------------------------------------------------------
+export function imgR(u, w, h, cs) {
+  const r = { m: 'img', u: u };
+
+  if (w !== undefined)
+    r.w = w;
+
+  if (h !== undefined)
+    r.h = h;
+
+  if (cs !== undefined)
+    r.cs = cs;
+
+  return r;
+}
+//------------------------------------------------------------------------------
+export function icoR(u, w, h, cs) {
+  return { ...imgR(u, w, h, cs), f: 'ico' };
 }
 //------------------------------------------------------------------------------
 export function icoUrl(u, w, h, cs) {
-  const r = { m: 'img', f: 'ico', u: u };
-  if( w !== undefined )
-    r.w = w;
-  if( h !== undefined )
-    r.h = h;
-  if( cs !== undefined )
-    r.cs = cs;
-  return BACKEND_URL + '?' + serializeURIParams({r:r});
+  return BACKEND_URL + '?' + serializeURIParams({ r: icoR(u, w, h, cs) });
 }
 //------------------------------------------------------------------------------
 export function imgUrl(u) {
-  return BACKEND_URL + '?' + serializeURIParams({ r: { m: 'img', u: u } });
+  return BACKEND_URL + '?' + serializeURIParams({ r: imgR(u) });
 }
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
@@ -298,7 +312,7 @@ class ZeroTimeout {
 //------------------------------------------------------------------------------
 ZeroTimeout.initialize();
 //------------------------------------------------------------------------------
-function setZeroTimeout(fn) {
+export function setZeroTimeout(fn) {
   ZeroTimeout.timeouts.push(fn);
   window.postMessage(ZeroTimeout.messageName, '*');
 }
@@ -314,16 +328,16 @@ class JobsQueue {
     JobsQueue.queue();
     return true;
   }
-  
+
   static queue() {
-    for(;;) {
+    for (; ;) {
       const job = JobsQueue.reqs.shift();
-  
+
       if (job === undefined)
         break;
 
       const ldr = JobsQueue.ldrs.shift();
-      
+
       if (ldr === undefined) {
         JobsQueue.reqs.push(job);
         setZeroTimeout(JobsQueue.queue);
@@ -333,7 +347,7 @@ class JobsQueue {
       job.launcher(job.opts, JobsQueue.end,
         // eslint-disable-next-line
         () => {
-          if( job.n !== 0 ) {
+          if (job.n !== 0) {
             job.n--;
             JobsQueue.reqs.push(job);
             return false;
