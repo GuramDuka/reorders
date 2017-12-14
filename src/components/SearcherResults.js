@@ -137,7 +137,7 @@ class Piece extends Component {
 
   closeCardHandler = e => this.setState({ expanded: undefined });
 
-  card = r => <Card id={this.props.id}
+  card = r => <Card
     expanded
     key={r.Ссылка}
     link={r.Ссылка}
@@ -160,10 +160,12 @@ class Piece extends Component {
     if (state.expanded !== undefined)
       return this.card(props[state.expanded]);
 
-    return <div id={props.id} className={styles.line}>
-      {this.grid(props.r0, props.r1)}
-      <Sui.Divider fitted />
-    </div>;
+    return this.grid(props.r0, props.r1);
+
+    // return <div id={props.id} className={styles.line}>
+    //   {this.grid(props.r0, props.r1)}
+    //   <Sui.Divider fitted />
+    // </div>;
   }
 }
 //------------------------------------------------------------------------------
@@ -349,7 +351,7 @@ class SearcherResults extends Component {
     const { rndr } = state;
     const lastItem = rndr.length !== 0 ? rndr[rndr.length - 1] : undefined;
 
-    if (lastItem && lastItem.props.itemIndex + 1 !== size) {
+    if (lastItem && lastItem.props.children.props.itemIndex + 1 !== size) {
       const el = document.getElementById(lastItem.props.id);
 
       if (el && isVisibleInWindow(el, true)) {
@@ -390,13 +392,13 @@ class SearcherResults extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     // this.restoreScrollPosition();
-    // if (process.env.NODE_ENV === 'development')
-    //   console.log('SearcherResults.componentDidUpdate');
+    if (process.env.NODE_ENV === 'development')
+      console.log('SearcherResults.componentDidUpdate');
 
     if (this.isMounted_ && this.props !== prevProps)
       this.loadRows({ index: 0, offs: 0, list: [] },
         result => this.setState({ ...result, rndr: [] }));
-    
+
     if (this.props === prevProps && this.state.offs > prevState.offs)
       window.scroll(undefined, 0);
   }
@@ -415,13 +417,13 @@ class SearcherResults extends Component {
     const rl = Math.min(rlength, roffs + size);
 
     for (let j = rndr.length, i = roffs + j, k = i << 1; i < rl; i++ , j++ , k += 2)
-      rndr[j] = <Piece
-        id={uuidv1()}
-        key={this.rkey++}
-        itemIndex={j}
-        index={k}
-        r0={list[k]}
-        r1={list[k + 1]} />;
+      rndr[j] = <Sui.Segment id={uuidv1()} className={styles.segment} key={this.rkey++}>
+        <Piece
+          itemIndex={j}
+          index={k}
+          r0={list[k]}
+          r1={list[k + 1]} />
+      </Sui.Segment>;
 
     const load = offs =>
       this.loadRows({ index: offs, offs: offs },
@@ -439,22 +441,20 @@ class SearcherResults extends Component {
           </Sui.Button>
         </Sui.Button.Group>
       </Sui.Segment>}
-      <Sui.Segment className={styles.segment}>
-        {rndr}
-      </Sui.Segment>{offs === 0 && rndr.length !== size ? null :
+      {rndr.slice(0, rndr.length)}{offs === 0 && rndr.length !== size ? null :
       <Sui.Segment>
         <Sui.Button.Group>{offs === 0 || rndr.length !== size ? null :
           <Sui.Button primary onClick={e => load(0)}>
             Начало
-          </Sui.Button>}{offs === 0 || rndr.length !== size ? null :
-          <Sui.Button.Or text="|" />}{offs === 0 || rndr.length !== size ? null :
-          <Sui.Button color="teal" onClick={e => load(offs - (size << 1))}>
-            Назад
-          </Sui.Button>}{offs === 0 || rndr.length !== size ? null :
-          <Sui.Button.Or text="|" />}{rndr.length !== size ? null :
-          <Sui.Button positive onClick={e => load(offs + (size << 1))}>
-            Дай
-          </Sui.Button>}
+      </Sui.Button>}{offs === 0 || rndr.length !== size ? null :
+            <Sui.Button.Or text="|" />}{offs === 0 || rndr.length !== size ? null :
+              <Sui.Button color="teal" onClick={e => load(offs - (size << 1))}>
+                Назад
+      </Sui.Button>}{offs === 0 || rndr.length !== size ? null :
+            <Sui.Button.Or text="|" />}{rndr.length !== size ? null :
+              <Sui.Button positive onClick={e => load(offs + (size << 1))}>
+                Дай
+      </Sui.Button>}
         </Sui.Button.Group>
       </Sui.Segment>}
     </Sui.Segment.Group>;

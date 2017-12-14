@@ -30,14 +30,14 @@
 
 :local(.grid) {
   composes: mp0;
-  height: calc(100% - 1px) !important;
+  /*height: calc(100% - 1px) !important;*/
   overflow: hidden !important;
 }
 
 :local(.line) {
   composes: mp0;
-  height: lineHeight !important;
-  overflow: hidden !important;
+  /*height: lineHeight !important;
+  overflow: hidden !important;*/
 }
 
 :local(.offscreen) {
@@ -107,6 +107,10 @@
 
 :local(.segment) {
   composes: mp0;
+}
+
+:local(.lsegment) {
+  border-top: 0 !important;
 }
 
 :local(.font50pct) {

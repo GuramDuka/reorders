@@ -32,7 +32,7 @@ class List extends Component {
     };
   
     sfetch({r:r}, json => {
-      json = transform(json, 'Ссылка');
+      json = transform(json);
 
       const coll = new Intl.Collator();
       const data = {

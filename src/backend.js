@@ -46,43 +46,109 @@ import disp, { store } from './store';
 //     add_header 'Service-Worker-Allowed' '/';
 // }
 //------------------------------------------------------------------------------
-export function transform(data, keyField) {
+export function transform(data) {
   if (Array.isArray(data)) {
     for (let i = data.length - 1; i >= 0; i--)
-      data[i] = transform(data[i], keyField);
+      data[i] = transform(data[i]);
     return data;
   }
 
-  const { cols, dict, text, boolean } = data;
+  // const { cols, dict, text, numeric, boolean, date } = data;
+
+  // for (const k of ['rows', 'grps']) {
+  //   const recs = data[k];
+
+  //   if (recs === undefined)
+  //     continue;
+
+  //   const rmap = {};
+
+  //   for (let i = recs.length - 1; i >= 0; i--) {
+  //     const row = recs[i];
+  //     const now = { /*lineNo : i + 1*/ };
+
+  //     for (let j = cols.length - 1; j >= 0; j--) {
+  //       const v = row[j];
+
+  //       if (v !== null) {
+  //         const n = cols[j];
+
+  //         if( date[n] ) {
+  //           const ts = Date.parse(v);
+
+  //           if( isNaN(ts) === false ) {
+  //             now[n] = new Date(ts);
+  //             continue;
+  //           }
+  //         }
+
+  //         if( text[n] !== undefined && dict[v] !== undefined ) {
+  //           now[n] = dict[v];
+  //           continue;
+  //         }
+
+  //         if( numeric[n] !== undefined ) {
+  //           now[n] = v;
+  //           continue;
+  //         }
+
+  //         if( boolean[n] !== undefined ) {
+  //           now[n] = v !== 0;
+  //           continue;
+  //         }
+          
+  //         now[n] = v;
+  //       }
+  //     }
+  //     recs[i] = now;
+
+  //     if (keyField !== undefined && keyField !== null)
+  //       rmap[now[keyField]] = now;
+  //   }
+
+  //   if (keyField !== undefined && keyField !== null)
+  //     data[k + 'Map'] = rmap;
+  // }
+
+  const { cols } = data;
 
   for (const k of ['rows', 'grps']) {
     const recs = data[k];
 
     if (recs === undefined)
       continue;
-
-    const rmap = {};
-
+    
     for (let i = recs.length - 1; i >= 0; i--) {
-      const row = recs[i];
-      const now = { /*lineNo : i + 1*/ };
-
-      for (let j = cols.length - 1; j >= 0; j--) {
-        const v = row[j];
-
-        if (v !== null) {
-          const n = cols[j];
-          now[n] = text[n] ? dict[v] : (boolean[n] ? v !== 0 : v);
+      const now = {}, row = recs[i], { r, t } = row;
+      
+      for( let j = r.length - 1; j >= 0; j-- ) {
+        const n = cols[j];
+        switch( t[j] ) {
+          case 0 : // null
+            now[n] = null;
+            break;
+          case 1 : // link
+            now[n] = r[j];
+            break;
+          case 2 : // string
+            now[n] = r[j];
+            break;
+          case 3 : // boolean
+            now[n] = r[j] !== 0;
+            break;
+          case 4 : // numeric
+            now[n] = r[j];
+            break;
+          case 5 : // date
+            now[n] = new Date(Date.parse(r[j]));
+            break;
+          default:
+            throw new Error('Unsupported value type in row transformation');
         }
       }
+      
       recs[i] = now;
-
-      if (keyField !== undefined && keyField !== null)
-        rmap[now[keyField]] = now;
     }
-
-    if (keyField !== undefined && keyField !== null)
-      data[k + 'Map'] = rmap;
   }
 
   return data;
@@ -138,6 +204,18 @@ export default BACKEND_URL;
 let batchJob;
 //------------------------------------------------------------------------------
 export function sfetch(opts, success, fail, start) {
+  if (opts.batch) {
+    const b = { ...opts };
+    delete b.batch;
+    batchJob(b, (bOpts, bSuccess, bFail) => {
+      sfetch(bOpts,
+        result => bSuccess() && success && success.constructor === Function && success(result),
+        error => bFail() && fail && fail.constructor === Function && fail(error),
+        start && start.constructor === Function ? sOpts => start(sOpts) : undefined);
+    });
+    return;
+  }
+
   if (opts.method === undefined)
     opts.method = 'GET';
 
@@ -154,6 +232,7 @@ export function sfetch(opts, success, fail, start) {
     opts.body = JSON.stringify(opts.r);
 
   let authData;
+  const r = opts.r !== undefined ? { ...opts.r } : undefined;
 
   if (!opts.noauth) {
     // send auth data
@@ -174,35 +253,26 @@ export function sfetch(opts, success, fail, start) {
     // need for caching authorized request separate from regular not authorized
     if (opts.r && auth) {
       if (opts.a === true && auth.authorized)
-        opts.r.a = true;
+        r.a = true;
       else if (opts.a === '' && auth.uuid)
-        opts.r.a = auth.uuid;
+        r.a = auth.uuid;
 
       if (auth.employee) {
         if (opts.e === true)
-          opts.r.e = true;
+          r.e = true;
         else if (opts.e === '' && auth.employee)
-          opts.r.e = auth.employee;
+          r.e = auth.employee;
       }
     }
   }
 
+  if( r !== undefined && opts.rmod && opts.rmod.constructor === Function )
+    opts.rmod(r);
+
   let url = BACKEND_URL;
 
-  if (opts.method === 'GET' && opts.r !== undefined)
-    url += '?' + serializeURIParams({ r: opts.r });
-
-  if (opts.batch) {
-    const b = { ...opts };
-    delete b.batch;
-    batchJob(b, (bOpts, bSuccess, bFail) => {
-      sfetch(bOpts,
-        result => bSuccess() && success && success.constructor === Function && success(result),
-        error => bFail() && fail && fail.constructor === Function && fail(error),
-        start && start.constructor === Function ? sOpts => start(sOpts) : undefined);
-    });
-    return;
-  }
+  if (opts.method === 'GET' && r !== undefined)
+    url += '?' + serializeURIParams({ r: r });
 
   const fetchId = fetch(url, opts).then(response => {
     const contentType = response.headers.get('content-type');

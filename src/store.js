@@ -214,9 +214,7 @@ export function sscat(delimiter, ...args) {
 const defaultState = {
   metadataVersion: 7,
   header: {
-    collapsed: true,
-    productsTreePath: [{ key: nullLink, name: 'Каталог' }],
-    customersTreePath: [{ key: nullLink, name: 'Контрагенты' }]
+    collapsed: true
   },
   body: {
     viewStack: [{ view: 'products' }],

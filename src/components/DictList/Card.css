@@ -1,0 +1,8 @@
+:local(.mp0) {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+:local(.colorBlack) {
+  color: black !important;
+}
