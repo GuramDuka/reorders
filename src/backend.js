@@ -127,8 +127,8 @@ export function transform(data) {
           case 0 : // null
             now[n] = null;
             break;
-          case 1 : // link
-            now[n] = r[j];
+          case 1 : // undefined
+            now[n] = undefined;
             break;
           case 2 : // string
             now[n] = r[j];
@@ -141,6 +141,9 @@ export function transform(data) {
             break;
           case 5 : // date
             now[n] = new Date(Date.parse(r[j]));
+            break;
+          case 6 : // link
+            now[n] = r[j];
             break;
           default:
             throw new Error('Unsupported value type in row transformation');
@@ -334,7 +337,7 @@ export function sfetch(opts, success, fail, start) {
   return fetchId;
 }
 //------------------------------------------------------------------------------
-export function imgR(u, w, h, cs) {
+export function imgR(u, w, h, cs, jq) {
   const r = { m: 'img', u: u };
 
   if (w !== undefined)
@@ -346,15 +349,18 @@ export function imgR(u, w, h, cs) {
   if (cs !== undefined)
     r.cs = cs;
 
+  if (jq !== undefined)
+    r.jq = jq;
+    
   return r;
 }
 //------------------------------------------------------------------------------
-export function icoR(u, w, h, cs) {
-  return { ...imgR(u, w, h, cs), f: 'ico' };
+export function icoR(u, w, h, cs, jq) {
+  return { ...imgR(u, w, h, cs, jq), f: 'ico' };
 }
 //------------------------------------------------------------------------------
-export function icoUrl(u, w, h, cs) {
-  return BACKEND_URL + '?' + serializeURIParams({ r: icoR(u, w, h, cs) });
+export function icoUrl(u, w, h, cs, jq) {
+  return BACKEND_URL + '?' + serializeURIParams({ r: icoR(u, w, h, cs, jq) });
 }
 //------------------------------------------------------------------------------
 export function imgUrl(u) {

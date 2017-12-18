@@ -5,22 +5,42 @@ import * as Sui from 'semantic-ui-react';
 import disp, { nullLink, sscat } from '../../store';
 import { transform, sfetch, icoUrl, imgUrl } from '../../backend';
 import { strftime } from '../../strftime';
+import nopic from '../../assets/nopic.svg';
 import styles from './Card.css';
 //------------------------------------------------------------------------------
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
 class Card extends Component {
   static mapStateToProps(state, ownProps) {
-    return state.mapIn(ownProps.path);
+    const cart = ownProps.expanded ? state.getIn([], 'cart', []) : undefined;
+    const i = cart ? cart.findIndex(v => v === ownProps.link) : undefined;
+    return {
+      ...state.mapIn(ownProps.path),
+      authorized: state.getIn('auth', 'authorized', false),
+      employee: state.getIn('auth', 'employee'),
+      cart: cart,
+      cartDataIndex: i,
+      cartData: cart ? cart[i] : undefined
+    };
   }
 
   static connectOptions = { withRef: true };
 
-  state = { isLoading: false, isImgLargeViewOpen: false };
+  state = {
+    isLoading: false,
+    isImgLargeViewOpen: false,
+    isCartDialogOpen: false
+  };
 
-  clickTitle = idx => disp(state => state.toggleIn([...this.props.path, 'activeTitles'], idx, 2));
+  clickTitle = (e, data) => {
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();    
+    disp(state => state.toggleIn([...this.props.path, 'activeTitles'], data.idx, 2));
+  };
 
   toggleCard = e => {
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();    
     disp(state => state.toggleIn(this.props.path, 'expanded'));
   };
 
@@ -63,13 +83,20 @@ class Card extends Component {
     };
   };
 
-  addToCart = e => disp(state => {
-    
-  });
+  openCartDialog = e => {
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();    
+    this.setState({isCartDialogOpen: true});
+  };
   
-  clickImg = e => this.setState({ isImgLargeViewOpen: true });
+  clickImg = e => {
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();    
+    this.setState({ isImgLargeViewOpen: true });
+  };
+
   closeImgLargeView = e => this.setState({ isImgLargeViewOpen: false });
-  closeCard = e => this.props.closeCardHandler && this.props.closeCardHandler(e);
+  closeCard = e => this.props.closeCardHandler(e);
 
   componentDidMount() {
     if( this.props.expanded )
@@ -83,20 +110,34 @@ class Card extends Component {
 
   dateFormatter = date => strftime('%d.%m.%Y %H:%M:%S', date);
 
+  ico = link => {
+    const { props } = this;
+    const { expanded } = props;
+    let w = expanded ? styles.icoExWidth : styles.icoWidth;
+    w = ~~w.substring(0, w.length - 2);
+    return <img className={expanded ? styles.icoEx : styles.ico} alt="BAD"
+      src={link === nullLink ? nopic : icoUrl(link, w, undefined, expanded ? 32 : 16)}
+      onClick={expanded ? this.clickImg : null} />;
+  };
+
+  closeCartDialogOpen = e => this.setState({isCartDialogOpen: false});
+
   render() {
     const { props, state } = this;
-    const { expanded, data } = props;
+
+    if( state.isLoading )
+      return <Sui.Segment textAlign="center" className={styles.mp0}>
+        <Sui.Loader active inline size="huge" />
+      </Sui.Segment>;
+
+    const { expanded, data, cartData } = props;
     const activeTitles = Array.isArray(props.activeTitles) ? props.activeTitles : [];
 
     // if( process.env.NODE_ENV === 'development' )
     //   console.log('render Card: ' + props.path[props.path.length - 1] + ', isLoading: ' + state.isLoading);
 
-    const icoKey = data.ОсновноеИзображение || nullLink;
-    const ico = icoKey === nullLink ? null :
-      <Sui.Image size="mini" src={icoUrl(icoKey, 28, 28)} style={{ padding: 2 }} />;
-
-    const img = icoKey === nullLink ? null :
-      <Sui.Image floated="left" size="tiny" src={imgUrl(icoKey)} onClick={this.clickImg} />;
+    const imgLink = data.ОсновноеИзображение || nullLink;
+    const ico = this.ico(imgLink);
 
     const fprp = rows => {
       const a = [];
@@ -114,20 +155,19 @@ class Card extends Component {
             s += ', ' + r.ЗначениеПредставление;
         });
 
-        a.push(
-          <strong key={a.length} className={styles.colorBlack}>{row.СвойствоПредставление}: </strong>,
-          <i key={a.length + 1} className={styles.colorBlack}>{s + (i + 1 < rows.length ? ';' : '')}</i>
-        );
+        s += i + 1 < rows.length ? '; ' : '';
+
+        a.push(<span key={i}><strong>{row.СвойствоПредставление}</strong>:&nbsp;{s}</span>);
       }
       return a;
     };
 
     const prop = expanded && state.props && state.props.rows.length !== 0 ? fprp(state.props.rows) : null;
 
-    const frems = rows => rows.map((row, i, a) => [
-      <strong key={i * 2} className={styles.colorBlack}>{row.Склад}: </strong>,
-      <i key={i * 2 + 1} className={styles.colorBlack}>{row.Остаток + (i + 1 !== a.length ? ',' : '')}</i>
-    ]);
+    const frems = rows => rows.map((row, i, a) => <span key={i}>
+        <strong>{row.Склад}:&nbsp;</strong>
+        {row.Остаток + (i + 1 !== a.length ? ', ' : '')}
+      </span>);
     const rems = expanded && state.rems && state.rems.rows.length !== 0 ? frems(state.rems.rows) : null;
 
     const fbprs = rows =>
@@ -142,8 +182,8 @@ class Card extends Component {
           <Sui.Grid.Column textAlign="center">
             <strong className={styles.colorBlack}>Цена</strong>
           </Sui.Grid.Column>
-        </Sui.Grid.Row>{rows.map(row =>
-        <Sui.Grid.Row>
+        </Sui.Grid.Row>{rows.map((row, i) =>
+        <Sui.Grid.Row key={i}>
           <Sui.Grid.Column textAlign="right">
             <i className={styles.colorBlack}>{this.dateFormatter(row.Период)}</i>
           </Sui.Grid.Column>
@@ -172,7 +212,7 @@ class Card extends Component {
       </Sui.Grid.Row>{rows.map((row, i, a) => {
         if( a.findIndex(v => v.Поставщик === row.Поставщик && v.Цена === row.Цена ) < i )
           return null;
-        return <Sui.Grid.Row>
+        return <Sui.Grid.Row key={i}>
           <Sui.Grid.Column>
             <i className={styles.colorBlack}>{row.ПоставщикПредставление}</i>
           </Sui.Grid.Column>
@@ -199,8 +239,8 @@ class Card extends Component {
         <Sui.Grid.Column textAlign="center">
           <strong className={styles.colorBlack}>Цена</strong>
         </Sui.Grid.Column>
-      </Sui.Grid.Row>{rows.map(row =>
-      <Sui.Grid.Row>
+      </Sui.Grid.Row>{rows.map((row, i) =>
+      <Sui.Grid.Row key={i}>
         <Sui.Grid.Column textAlign="right">
           <i className={styles.colorBlack}>{this.dateFormatter(row.Период)}</i>
         </Sui.Grid.Column>
@@ -214,7 +254,7 @@ class Card extends Component {
     </Sui.Grid>;
     const lprs = expanded && state.lprs && state.lprs.rows.length !== 0 ? flprs(state.lprs.rows) : null;
     
-    const desc = expanded && state.desc
+    const desc = expanded && state.desc && state.desc.ДополнительноеОписаниеНоменклатуры.trim().length !== 0
       ? state.desc.ДополнительноеОписаниеНоменклатуры
         //.replace(/\\r\\n/g, '<br />')
         //.replace(/\\r/g, '<br />')
@@ -223,127 +263,165 @@ class Card extends Component {
         //.replace(//g, '&bull;') // https://unicode-table.com/en/F020/
         .replace(//g, '•')
         .trim()
-      : '';
+      : null;
 
-    const meta = expanded ?
-      <Sui.Accordion exclusive={false}>
-        <Sui.Accordion.Content active={true}>
-          {[<strong key="0" className={styles.colorBlack}>Код: </strong>, <i key="1" className={styles.colorBlack}>{data.Код}</i>]}
-          {data.Артикул ? [<strong key="6" className={styles.colorBlack}>, Артикул: </strong>, <i key="10" className={styles.colorBlack}>{data.Артикул}</i>] : null}
-          {data.Производитель ? [<strong key="7" className={styles.colorBlack}>, Производитель:</strong>, <i key="11" className={styles.colorBlack}>{data.Производитель}</i>] : null}
-          {data.Остаток ? [<strong key="8" className={styles.colorBlack}>, Остаток:</strong>, <i key="12" className={styles.colorBlack}>{data.Остаток}</i>] : null}
-          {data.Цена ? [<strong key="9" className={styles.colorBlack}>, Цена:</strong>, <i key="13" className={styles.colorBlack}>{data.Цена + '₽'}</i>] : null}
-        </Sui.Accordion.Content>{prop ?
-          <Sui.Accordion.Title active={!!activeTitles[1]}
-            index={1} idx={1} onClick={e => this.clickTitle(1)}>
-            <Sui.Label size="small" color="blue">
-              <Sui.Icon name="dropdown" size="large" />
-              Свойства
-            <Sui.Label.Detail>{state.props.rows.length}</Sui.Label.Detail>
-            </Sui.Label>
-          </Sui.Accordion.Title> : null}{prop ?
-            <Sui.Accordion.Content active={!!activeTitles[1]}>
-              {prop}
-            </Sui.Accordion.Content> : null}{rems ?
-              <Sui.Accordion.Title active={!!activeTitles[2]}
-                index={2} idx={2} onClick={e => this.clickTitle(2)}>
-                <Sui.Label size="small" color="blue">
-                  <Sui.Icon name="dropdown" size="large" />
-                  Остатки
-            <Sui.Label.Detail>{state.rems.rows.length}</Sui.Label.Detail>
-            </Sui.Label>
-              </Sui.Accordion.Title> : null}{rems ?
-              <Sui.Accordion.Content active={!!activeTitles[2]}>
-                {rems}
-              </Sui.Accordion.Content> : null}{desc.length === 0 ? null :
-              <Sui.Accordion.Title active={!!activeTitles[3]} index={3} idx={3} onClick={e => this.clickTitle(3)}>
-                <Sui.Label size="small" color="blue">
-                  <Sui.Icon name="dropdown" size="large" />
-                  Описание
-                  <Sui.Label.Detail>{desc.length}</Sui.Label.Detail>
-                </Sui.Label>
-              </Sui.Accordion.Title>}
-        <Sui.Accordion.Content active={!!activeTitles[3]}>
-          <Sui.Container fluid textAlign="justified" className={styles.colorBlack}>{desc}</Sui.Container>
-        </Sui.Accordion.Content>{bprs ?
-        <Sui.Accordion.Title active={!!activeTitles[4]}
-          index={4} idx={4} onClick={e => this.clickTitle(4)}>
-          <Sui.Label size="small" color="blue">
-            <Sui.Icon name="dropdown" size="large" />
-            Базовые цены
-            <Sui.Label.Detail>{state.bprs.rows.length}</Sui.Label.Detail>
-          </Sui.Label>
-        </Sui.Accordion.Title> : null}{bprs ?
-        <Sui.Accordion.Content active={!!activeTitles[4]}>
-          {bprs}
-        </Sui.Accordion.Content> : null}{sprs ?
-        <Sui.Accordion.Title active={!!activeTitles[5]}
-          index={5} idx={5} onClick={e => this.clickTitle(5)}>
-          <Sui.Label size="small" color="blue">
-            <Sui.Icon name="dropdown" size="large" />
-            Цены поставщиков
-            <Sui.Label.Detail>{state.sprs.rows.length}</Sui.Label.Detail>
-          </Sui.Label>
-        </Sui.Accordion.Title> : null}{sprs ?
-        <Sui.Accordion.Content active={!!activeTitles[5]}>
-          {sprs}
-        </Sui.Accordion.Content> : null}{lprs ?
-        <Sui.Accordion.Title active={!!activeTitles[6]}
-          index={6} idx={6} onClick={e => this.clickTitle(6)}>
-          <Sui.Label size="small" color="blue">
-            <Sui.Icon name="dropdown" size="large" />
-            Цены продажи
-            <Sui.Label.Detail>{state.lprs.rows.length}</Sui.Label.Detail>
-          </Sui.Label>
-        </Sui.Accordion.Title> : null}{lprs ?
-        <Sui.Accordion.Content active={!!activeTitles[6]}>
-          {lprs}
-        </Sui.Accordion.Content> : null}
-      </Sui.Accordion> : null;
+    const meta = !expanded ? null : [
+      <p key={1}>
+        <span><strong className={styles.colorBlack}>Код: </strong>{data.Код}</span>
+        {data.Артикул ? <span><strong className={styles.colorBlack}>, Артикул: </strong>{data.Артикул}</span> : null}
+        {data.Производитель ? <span><strong className={styles.colorBlack}>, Производитель: </strong>{data.Производитель}</span> : null}
+        {data.Остаток ? <span><strong className={styles.colorBlack}>, Остаток: </strong>{data.Остаток}</span> : null}
+        {data.Резерв ? <span><strong className={styles.colorBlack}>, Резерв: </strong>{data.Резерв}</span> : null}
+        {data.Цена ? <span><strong className={styles.colorBlack}>, Цена: </strong>{data.Цена + '₽'}</span> : null}
+      </p>,
+      !prop ? null : !!activeTitles[1]
+      ? <Sui.Message key={14} positive idx={1} header="Свойства" content={prop}
+        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />
+      : <Sui.Label key={14} idx={1} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+          <Sui.Icon name="tasks" className={styles.mr0} />
+          <Sui.Label.Detail>{state.props.rows.length}</Sui.Label.Detail>
+        </Sui.Label>,
+      !rems ? null : !!activeTitles[2]
+      ? <Sui.Message key={15} positive idx={2} header="Остатки" content={rems}
+        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />
+      : <Sui.Label key={15} idx={2} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+          <Sui.Icon name="database" className={styles.mr0} />
+          <Sui.Label.Detail>{state.rems.rows.length}</Sui.Label.Detail>
+        </Sui.Label>,
+      !desc ? null : !!activeTitles[3]
+      ? <Sui.Message key={16} positive idx={3} header="Описание" content={desc}
+        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.m1].join(' ')} />
+      : <Sui.Label key={16} idx={3} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+          <Sui.Icon name="hashtag" className={styles.mr0} />
+          <Sui.Label.Detail>{desc.length}</Sui.Label.Detail>
+        </Sui.Label>,
+      !bprs ? null : !!activeTitles[4]
+      ? <Sui.Message key={17} positive idx={4} header="Базовые цены" content={bprs}
+        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />
+      : <Sui.Label key={17} idx={4} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+          <Sui.Icon name="cube" className={styles.mr0} />
+          <Sui.Label.Detail>{state.bprs.rows.length}</Sui.Label.Detail>
+        </Sui.Label>,
+      !sprs ? null : !!activeTitles[5]
+      ? <Sui.Message key={18} positive idx={5} header="Цены поставщиков" content={sprs}
+        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />
+      : <Sui.Label key={18} idx={5} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+          <Sui.Icon name="diamond" className={styles.mr0} />
+          <Sui.Label.Detail>{state.sprs.rows.length}</Sui.Label.Detail>
+        </Sui.Label>,
+      !lprs ? null : !!activeTitles[6]
+      ? <Sui.Message key={19} positive idx={6} header="Цены продажи" content={lprs}
+        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />
+      : <Sui.Label key={19} idx={6} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+          <Sui.Icon name="money" className={styles.mr0} />
+          <Sui.Label.Detail>{state.lprs.rows.length}</Sui.Label.Detail>
+        </Sui.Label>,
+    ];
 
     const hdr = expanded
-      ? (state.desc && state.desc.НаименованиеПолное ? state.desc.НаименованиеПолное : data.Наименование)
-      : sscat(' ', '[' + data.Код + ']', data.Наименование, data.Артикул, data.Производитель);
+      ? state.desc && state.desc.НаименованиеПолное
+        ? state.desc.НаименованиеПолное.replace(/(,(?=\S)|:)/g, ', ')
+        : data.Наименование.replace(/(,(?=\S)|:)/g, ', ')        
+      : <span>{sscat(' ', '[' + data.Код + ']',
+        data.Наименование.replace(/(,(?=\S)|:)/g, ', '),
+        data.Артикул.replace(/(,(?=\S)|:)/g, ', '),
+        data.Производитель.replace(/(,(?=\S)|:)/g, ', '))}
+        <strong>{
+        ', ' + data.Остаток + (data.Резерв ? ' (' + data.Резерв + ')' : '') + '⧉'
+        + ', ' + data.Цена + '₽'}
+        </strong>
+      </span>;
 
-    const expandedString = (~~!!expanded).toString();
+    const toCartButton =
+      <Sui.Button as="div" labelPosition="right" onClick={this.openCartDialog}>
+        <Sui.Button compact basic color="blue">
+          <Sui.Icon name="shop" />
+        </Sui.Button>
+        <Sui.Label as="a" basic color="blue" pointing="left">
+          {cartData ? 'В корзине ' + cartData.quantity : 'В корзину'}
+        </Sui.Label>
+      </Sui.Button>;
 
-    return <Sui.Card id={props.id} fluid style={{ marginLeft: 0, marginRight: 0, marginTop: 0, marginBottom: 0 }}>
-      <Sui.Card.Content style={{ padding: '.25em' }}>
-        {expanded ? img : null}
-        <Sui.Card.Header style={{ fontSize: '87%' }} expanded={expandedString} onClick={this.toggleCard}>
-          {hdr}{expanded ? null :
-            <Sui.Label size="small" color="teal" image>
-              {ico}
-              {data.ОстатокОбщий}{data.Резерв ? ' (' + data.Резерв + ')' : ''}
-              <Sui.Label.Detail>{data.Цена}₽</Sui.Label.Detail>
-            </Sui.Label>}
-        </Sui.Card.Header>{expanded ?
-          <Sui.Card.Meta>
-            {meta}
-          </Sui.Card.Meta> : null}
-      </Sui.Card.Content>{expanded ?
-        <Sui.Card.Content extra style={{ padding: '.25em' }}>{state.isLoading ? <Sui.Loader active inline size="small" /> :
-          props.closeCardHandler
-            ? <Sui.Button compact basic size="small" color="blue" onClick={this.closeCard} icon="close" content="Закрыть" labelPosition="left" />
-            : <Sui.Button compact size="tiny" circular primary expanded={expandedString} onClick={this.toggleCard} icon="compress" />
-        }{state.isLoading ? null :
-          <Sui.Button compact basic
-            size="small"
-            color="blue"
-            content="В корзину"
-            icon="shop"
-            labelPosition="left"
-            onClick={this.addToCart} />}
-        </Sui.Card.Content> : null}{expanded ?
-          <Sui.Modal open={this.state.isImgLargeViewOpen} onClose={this.closeImgLargeView}>
-            <Sui.Modal.Content image>
-              <Sui.Image wrapped fluid src={imgUrl(icoKey)} />
-            </Sui.Modal.Content>
-            <Sui.Modal.Actions>
-              <Sui.Button icon="checkmark" labelPosition="right" content="Закрыть" onClick={this.closeImgLargeView} />
-            </Sui.Modal.Actions>
-          </Sui.Modal> : null}
-    </Sui.Card>;
+    const closeButton = props.closeCardHandler ?
+      <Sui.Button as="div" labelPosition="right" onClick={this.closeCard}>
+        <Sui.Button compact basic color="blue">
+          <Sui.Icon name="close" />
+        </Sui.Button>
+        <Sui.Label as="a" basic color="blue" pointing="left">Закрыть</Sui.Label>
+      </Sui.Button>
+      : null;//<Sui.Button compact size="tiny" circular primary onClick={this.toggleCard} icon="compress" />;
+
+    if( expanded )
+      return <Sui.Segment.Group id={props.id} className={styles.mp0} onClick={closeButton ? null : this.toggleCard}>
+      <Sui.Segment className={styles.cardEx}>
+        {ico}
+        {hdr}
+        {meta}
+      </Sui.Segment>
+      <Sui.Segment className={[styles.mp0, styles.clearBoth].join(' ')}>
+        {closeButton}
+        {toCartButton}
+      </Sui.Segment>
+      <Sui.Modal open={state.isImgLargeViewOpen} onClose={this.closeImgLargeView}>
+        <Sui.Modal.Content image>
+          <Sui.Image wrapped fluid alt="BROKEN" src={imgLink === nullLink ? nopic : imgUrl(imgLink)} />
+        </Sui.Modal.Content>
+        <Sui.Modal.Actions>
+          <Sui.Button icon="checkmark" labelPosition="right" content="Закрыть" onClick={this.closeImgLargeView} />
+        </Sui.Modal.Actions>
+      </Sui.Modal>
+      <Sui.Modal open={state.isCartDialogOpen} onClose={this.closeCartDialogOpen}>
+        <Sui.Modal.Header className={styles.cartDlgHdr}>В корзину</Sui.Modal.Header>
+        <Sui.Modal.Content>{props.employee ?
+          <Sui.Input type="numeric" labelPosition="right" className={styles.cartDlgInput}
+            defaultValue={data.Цена}>
+            <Sui.Label basic className={styles.cartDlgInputL1}>
+              Базовая цена
+            </Sui.Label>
+            <input className={styles.cartDlgInnerInput} />
+            <Sui.Label basic className={styles.cartDlgInputL2}>₽</Sui.Label>
+          </Sui.Input> : null}{props.employee ?
+          <Sui.Input type="numeric" labelPosition="right" className={styles.cartDlgInput}
+            defaultValue={0}>
+            <Sui.Label basic className={styles.cartDlgInputL1}>
+              Процент наценки
+            </Sui.Label>
+            <input className={styles.cartDlgInnerInput} />
+            <Sui.Label basic className={styles.cartDlgInputL2}>%</Sui.Label>
+          </Sui.Input> : null}
+          <Sui.Input type="numeric" labelPosition="right" className={styles.cartDlgInput}
+            defaultValue={cartData ? cartData.price : data.Цена}
+            placeholder={cartData ? cartData.price : data.Цена}
+            disabled={!props.employee}>
+            <Sui.Label basic className={styles.cartDlgInputL1}>
+              Цена
+            </Sui.Label>
+            <input className={styles.cartDlgInnerInput} />
+            <Sui.Label basic className={styles.cartDlgInputL2}>₽</Sui.Label>
+          </Sui.Input>
+          <Sui.Input type="numeric" labelPosition="right" className={styles.cartDlgInput}
+            defaultValue={cartData ? cartData.quantity : 1}
+            placeholder={cartData ? cartData.quantity : 1}>
+            <Sui.Label basic className={styles.cartDlgInputL1}>
+              Количество
+            </Sui.Label>
+            <input className={styles.cartDlgInnerInput} />
+            <Sui.Label basic className={styles.cartDlgInputL2}>⧉</Sui.Label>
+          </Sui.Input>
+        </Sui.Modal.Content>
+        <Sui.Modal.Actions>
+          <Sui.Button.Group>
+            <Sui.Button compact basic primary icon="shop" labelPosition="left" content="Положить" onClick={this.putItemToCart} />
+            <Sui.Button compact basic primary icon="close" labelPosition="left" content="Закрыть" onClick={this.closeCartDialogOpen} />
+          </Sui.Button.Group>
+        </Sui.Modal.Actions>
+      </Sui.Modal>
+    </Sui.Segment.Group>;
+
+    return <Sui.Segment className={styles.card} onClick={this.toggleCard}>
+      {ico}
+      {hdr}
+      </Sui.Segment>;
   }
 }
 //------------------------------------------------------------------------------

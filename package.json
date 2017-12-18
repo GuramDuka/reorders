@@ -30,7 +30,7 @@
     "react-transition-group": "^2.2.1",
     "react-variable-height-infinite-scroller": "^3.3.5",
     "react-virtual-list": "^2.2.2",
-    "react-virtualized": "^9.13.0",
+    "react-virtualized": "^9.14.0",
     "redux": "^3.7.2",
     "seamless-immutable": "^7.1.2",
     "semantic-ui-css": "^2.2.12",
@@ -40,7 +40,7 @@
   },
   "proxy": {
     "/api/backend": {
-      "target": "http://192.168.5.221/opt/hs/react",
+      "target": "http://31.210.212.158:65480/opt-ws/hs/react",
       "pathRewrite": {
         "^/api/backend": "/"
       }

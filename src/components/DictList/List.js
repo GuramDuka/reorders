@@ -23,7 +23,7 @@ class List extends Component {
     grps       : []
   };
   
-  reload = (view) => {
+  reload = view => {
     const obj = this;
     const r = {
       r : view,
@@ -80,15 +80,14 @@ class List extends Component {
         parent={view.parent}
         breadcrumb={props.breadcrumb}
         data={state.grps} />,
-      <Sui.Segment key={1}
-        style={{padding: 0, margin: 0}}>
+      <Sui.Segment.Group key={1} style={{padding: 0, margin: 0}}>
         {state.rows.map((row) =>
           <Card
             key={row.Ссылка}
             link={row.Ссылка}
             path={[...path, 'cards', row.Ссылка]}
             data={row} />)}
-        </Sui.Segment>];
+        </Sui.Segment.Group>];
   }
 }
 //------------------------------------------------------------------------------

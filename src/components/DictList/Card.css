@@ -1,8 +1,98 @@
+@value icoWidth: 38px;
+@value icoHeight: 38px;
+
+@value icoExWidth: 128px;
+@value icoExHeight: 128px;
+
 :local(.mp0) {
   margin: 0 !important;
   padding: 0 !important;
 }
 
+:local(.msg1) {
+  margin: 0 !important;
+  padding: 0.7em !important;
+  margin-bottom: 1px !important;
+}
+
+:local(.msgBtn) {
+  padding: 2px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  margin: 0px !important;
+  margin-right: 2px !important;
+  margin-bottom: 2px !important;
+}
+
+:local(.mr0) {
+  margin-right: 0px !important;
+}
+
+:local(.m1) {
+  margin: 1px !important;
+}
+
+:local(.card) {
+  composes: mp0;
+  clear: both;
+}
+
+:local(.cardEx) {
+  composes: mp0;
+  clear: both;
+}
+
+:local(.ico) {
+  float: left;
+  width: icoWidth !important;
+  height: auto !important;
+  margin: 2px;
+}
+
+:local(.icoEx) {
+  float: left;
+  width: icoExWidth !important;
+  height: auto !important;
+  margin: 2px;
+}
+
+:local(.clearBoth) {
+  clear: both;
+}
+
+:local(.img) {
+  float: left;
+  width: icoWidth !important;
+  height: auto !important;
+}
+
 :local(.colorBlack) {
   color: black !important;
+}
+
+:local(.cartDlgHdr) {
+  text-align: center;
+}
+
+:local(.cartDlgInput) {
+  min-width: calc(100% - 2.6em) !important;
+  max-width: calc(100% - 2.6em) !important;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+:local(.cartDlgInnerInput) {
+  text-align: right !important;
+  max-width: calc(100% - 2.6em - 11em) !important;
+}
+
+:local(.cartDlgInputL1) {
+  text-align: right !important;
+  min-width: 11em !important;
+  word-wrap: none;
+}
+
+:local(.cartDlgInputL2) {
+  text-align: right !important;
+  width: 2.6em !important;
 }

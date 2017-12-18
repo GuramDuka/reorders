@@ -67,12 +67,12 @@ class Piece extends Component {
   ico = row => {
     if (row) {
       if (row.ОсновноеИзображение && row.ОсновноеИзображение !== nullLink) {
-        const w = ~~styles.icoWidth.substring(0, styles.icoWidth.length - 2);
+        //const w = ~~styles.icoWidth.substring(0, styles.icoWidth.length - 2);
         const h = ~~styles.icoHeight.substring(0, styles.icoHeight.length - 2);
         // const r = icoR(row.ОсновноеИзображение, w, h, 16);
         // return <Image url={icoUrl(row.ОсновноеИзображение, w, h, 16)} r={r} />;
         return <img alt="BROKEN"
-          src={icoUrl(row.ОсновноеИзображение, w, h, 16)}
+          src={icoUrl(row.ОсновноеИзображение, undefined, h, 16)}
           className={styles.regular} />;
       }
 
@@ -81,7 +81,17 @@ class Piece extends Component {
     return null;
   };
 
-  content = row => row ? sscat(' ', row.Наименование, row.Артикул, row.Производитель) : null;
+  content = row => row ? sscat(' ',
+    // regex replace comma without space after
+    row.Наименование.replace(/(,(?=\S)|:)/g, ', '),
+    row.Артикул.replace(/(,(?=\S)|:)/g, ', '),
+    row.Производитель.replace(/(,(?=\S)|:)/g, ', '))
+    // <strong>{
+    //   ', ' + row.Остаток + (row.Резерв ? ' (' + row.Резерв + ')' : '') + '⧉'
+    //   + ', ' + row.Цена + '₽'}
+    //   </strong>
+    // </span>
+    : null;
 
   extraContent = (row, col) => row ?
     <Sui.List className={styles.lst}>
@@ -100,7 +110,7 @@ class Piece extends Component {
       <Sui.List.Item className={styles.itm}>
         <Sui.Label size="small" image color="violet" className={styles.lbl}>
           <Sui.Icon name="tag" className={styles.icn} />
-          <strong>{row.Остаток}</strong>
+          <strong>{row.Остаток + (row.Резерв ? ' (' + row.Резерв + ')' : '')}</strong>
         </Sui.Label>
       </Sui.List.Item>{process.env.NODE_ENV === 'development' ?
         <Sui.List.Item className={styles.itm}>
@@ -116,11 +126,11 @@ class Piece extends Component {
   grid = (r0, r1) =>
     <Sui.Grid columns="2" divided className={styles.grid}>
       <Sui.Grid.Row className={styles.row}>
-        <Sui.Grid.Column onClick={e => this.handleClick(0)} className={styles.mp0}>
+        <Sui.Grid.Column onClick={e => this.handleClick(0)} className={styles.col}>
           {this.extraContent(r0, 0)}
           {this.ico(r0)}
         </Sui.Grid.Column>
-        <Sui.Grid.Column onClick={e => this.handleClick(1)} className={styles.mp0}>
+        <Sui.Grid.Column onClick={e => this.handleClick(1)} className={styles.col}>
           {this.extraContent(r1, 1)}
           {this.ico(r1)}
         </Sui.Grid.Column>
@@ -446,15 +456,15 @@ class SearcherResults extends Component {
         <Sui.Button.Group>{offs === 0 || rndr.length !== size ? null :
           <Sui.Button primary onClick={e => load(0)}>
             Начало
-      </Sui.Button>}{offs === 0 || rndr.length !== size ? null :
-            <Sui.Button.Or text="|" />}{offs === 0 || rndr.length !== size ? null :
-              <Sui.Button color="teal" onClick={e => load(offs - (size << 1))}>
-                Назад
-      </Sui.Button>}{offs === 0 || rndr.length !== size ? null :
-            <Sui.Button.Or text="|" />}{rndr.length !== size ? null :
-              <Sui.Button positive onClick={e => load(offs + (size << 1))}>
-                Дай
-      </Sui.Button>}
+          </Sui.Button>}{offs === 0 || rndr.length !== size ? null :
+          <Sui.Button.Or text="|" />}{offs === 0 || rndr.length !== size ? null :
+          <Sui.Button color="teal" onClick={e => load(offs - (size << 1))}>
+            Назад
+          </Sui.Button>}{offs === 0 || rndr.length !== size ? null :
+          <Sui.Button.Or text="|" />}{rndr.length !== size ? null :
+            <Sui.Button positive onClick={e => load(offs + (size << 1))}>
+              Дай
+          </Sui.Button>}
         </Sui.Button.Group>
       </Sui.Segment>}
     </Sui.Segment.Group>;

@@ -30,8 +30,8 @@
 
 :local(.grid) {
   composes: mp0;
-  /*height: calc(100% - 1px) !important;*/
-  overflow: hidden !important;
+  /*height: calc(100% - 1px) !important;
+  overflow: hidden !important;*/
 }
 
 :local(.line) {
@@ -64,10 +64,15 @@
 
 :local(.regular) {
   float: right;
-  display: block;
   padding: 4px;
   margin: 0;
+  width: auto;
   height: icoHeight;
+}
+
+:local(.col) {
+  composes: mp0;
+  clear: both;
 }
 
 :local(.lbl) {
