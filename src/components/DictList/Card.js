@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import connect from 'react-redux-connect';
 import * as Sui from 'semantic-ui-react';
-import disp, { nullLink, sscat } from '../../store';
+import disp, { nullLink, sscat, copy } from '../../store';
 import { transform, sfetch, icoUrl, imgUrl } from '../../backend';
 import { strftime } from '../../strftime';
 import nopic from '../../assets/nopic.svg';
@@ -12,15 +12,14 @@ import styles from './Card.css';
 //------------------------------------------------------------------------------
 class Card extends Component {
   static mapStateToProps(state, ownProps) {
-    const cart = ownProps.expanded ? state.getIn([], 'cart', []) : undefined;
-    const i = cart ? cart.findIndex(v => v === ownProps.link) : undefined;
+    const cartRows = ownProps.expanded ? state.getIn('cart', 'rows') : undefined;
+    const i = cartRows ? cartRows.findIndex(v => v.Ссылка === ownProps.link) : -1;
     return {
       ...state.mapIn(ownProps.path),
       authorized: state.getIn('auth', 'authorized', false),
       employee: state.getIn('auth', 'employee'),
-      cart: cart,
       cartDataIndex: i,
-      cartData: cart ? cart[i] : undefined
+      cartData: cartRows ? cartRows[i] : undefined
     };
   }
 
@@ -121,6 +120,43 @@ class Card extends Component {
   };
 
   closeCartDialogOpen = e => this.setState({isCartDialogOpen: false});
+
+  putCartToServer = state => {
+    if( state.getIn('cart', 'dirty', false) ) {
+      const cart = copy(state.getIn([], 'cart', {}));
+      delete cart.dirty;
+      const opts = {
+        method: 'PUT', r: { m: 'cart', f: 'put', r: cart }, a: true
+      };
+
+      sfetch(opts,
+        json => disp(state => state.deleteIn('cart', 'dirty', true)),
+        error => setTimeout(e => disp(this.putCartToServer), 3000)
+      );
+    }
+
+    return state;
+  };
+
+  putItemToCart = e => disp(state => {
+    const { data, cartDataIndex } = this.props;
+    const cart = state.getIn([], 'cart', {});
+    const rows = cart.rows ? cart.rows : [];
+    const indx = cartDataIndex >= 0 ? cartDataIndex : 0;
+    const row = indx >= 0 ? {...rows[indx]} : {...data};
+    const { price, quantity } = this;
+
+    row.price = price;
+    row.quantity = quantity;
+
+    state = state.setIn(['cart', 'rows'], indx, row)
+      .setIn('cart', 'dirty', true);
+
+    state = this.putCartToServer(state);
+
+    this.setState({isCartDialogOpen: false});
+    return state;
+  });
 
   render() {
     const { props, state } = this;
@@ -274,48 +310,54 @@ class Card extends Component {
         {data.Резерв ? <span><strong className={styles.colorBlack}>, Резерв: </strong>{data.Резерв}</span> : null}
         {data.Цена ? <span><strong className={styles.colorBlack}>, Цена: </strong>{data.Цена + '₽'}</span> : null}
       </p>,
-      !prop ? null : !!activeTitles[1]
-      ? <Sui.Message key={14} positive idx={1} header="Свойства" content={prop}
-        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />
-      : <Sui.Label key={14} idx={1} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+      !prop || activeTitles[1] ? null :
+        <Sui.Label key={14} idx={1} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
           <Sui.Icon name="tasks" className={styles.mr0} />
           <Sui.Label.Detail>{state.props.rows.length}</Sui.Label.Detail>
         </Sui.Label>,
-      !rems ? null : !!activeTitles[2]
-      ? <Sui.Message key={15} positive idx={2} header="Остатки" content={rems}
-        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />
-      : <Sui.Label key={15} idx={2} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+      !rems || activeTitles[2] ? null :
+        <Sui.Label key={15} idx={2} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
           <Sui.Icon name="database" className={styles.mr0} />
           <Sui.Label.Detail>{state.rems.rows.length}</Sui.Label.Detail>
         </Sui.Label>,
-      !desc ? null : !!activeTitles[3]
-      ? <Sui.Message key={16} positive idx={3} header="Описание" content={desc}
-        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.m1].join(' ')} />
-      : <Sui.Label key={16} idx={3} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+      !desc || activeTitles[3] ? null :
+        <Sui.Label key={16} idx={3} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
           <Sui.Icon name="hashtag" className={styles.mr0} />
           <Sui.Label.Detail>{desc.length}</Sui.Label.Detail>
         </Sui.Label>,
-      !bprs ? null : !!activeTitles[4]
-      ? <Sui.Message key={17} positive idx={4} header="Базовые цены" content={bprs}
-        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />
-      : <Sui.Label key={17} idx={4} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+      !bprs || activeTitles[4] ? null :
+        <Sui.Label key={17} idx={4} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
           <Sui.Icon name="cube" className={styles.mr0} />
           <Sui.Label.Detail>{state.bprs.rows.length}</Sui.Label.Detail>
         </Sui.Label>,
-      !sprs ? null : !!activeTitles[5]
-      ? <Sui.Message key={18} positive idx={5} header="Цены поставщиков" content={sprs}
-        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />
-      : <Sui.Label key={18} idx={5} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+      !sprs || activeTitles[5] ? null :
+        <Sui.Label key={18} idx={5} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
           <Sui.Icon name="diamond" className={styles.mr0} />
           <Sui.Label.Detail>{state.sprs.rows.length}</Sui.Label.Detail>
         </Sui.Label>,
-      !lprs ? null : !!activeTitles[6]
-      ? <Sui.Message key={19} positive idx={6} header="Цены продажи" content={lprs}
-        onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />
-      : <Sui.Label key={19} idx={6} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
+      !lprs || activeTitles[6] ? null :
+        <Sui.Label key={19} idx={6} basic size="large" onClick={this.clickTitle} className={styles.msgBtn}>
           <Sui.Icon name="money" className={styles.mr0} />
           <Sui.Label.Detail>{state.lprs.rows.length}</Sui.Label.Detail>
         </Sui.Label>,
+      !prop || !activeTitles[1] ? null :
+        <Sui.Message key={14} positive idx={1} header="Свойства" content={prop}
+          onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />,
+      !rems || !activeTitles[2] ? null :
+        <Sui.Message key={15} positive idx={2} header="Остатки" content={rems}
+          onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />,
+      !desc || !activeTitles[3] ? null :
+        <Sui.Message key={16} positive idx={3} header="Описание" content={desc}
+          onDismiss={this.clickTitle} className={[styles.clearBoth, styles.m1].join(' ')} />,
+      !bprs || !activeTitles[4] ? null :
+        <Sui.Message key={17} positive idx={4} header="Базовые цены" content={bprs}
+          onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />,
+      !sprs || !activeTitles[5] ? null :
+        <Sui.Message key={18} positive idx={5} header="Цены поставщиков" content={sprs}
+          onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />,
+      !lprs || !activeTitles[6] ? null :
+        <Sui.Message key={19} positive idx={6} header="Цены продажи" content={lprs}
+          onDismiss={this.clickTitle} className={[styles.clearBoth, styles.msg1].join(' ')} />,
     ];
 
     const hdr = expanded
@@ -392,6 +434,7 @@ class Card extends Component {
           <Sui.Input type="numeric" labelPosition="right" className={styles.cartDlgInput}
             defaultValue={cartData ? cartData.price : data.Цена}
             placeholder={cartData ? cartData.price : data.Цена}
+            onChange={(e, data) => this.price = data.value}
             disabled={!props.employee}>
             <Sui.Label basic className={styles.cartDlgInputL1}>
               Цена
@@ -401,7 +444,8 @@ class Card extends Component {
           </Sui.Input>
           <Sui.Input type="numeric" labelPosition="right" className={styles.cartDlgInput}
             defaultValue={cartData ? cartData.quantity : 1}
-            placeholder={cartData ? cartData.quantity : 1}>
+            placeholder={cartData ? cartData.quantity : 1}
+            onChange={(e, data) => this.quantity = data.value}>
             <Sui.Label basic className={styles.cartDlgInputL1}>
               Количество
             </Sui.Label>

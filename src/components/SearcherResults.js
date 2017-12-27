@@ -85,13 +85,10 @@ class Piece extends Component {
     // regex replace comma without space after
     row.Наименование.replace(/(,(?=\S)|:)/g, ', '),
     row.Артикул.replace(/(,(?=\S)|:)/g, ', '),
-    row.Производитель.replace(/(,(?=\S)|:)/g, ', '))
-    // <strong>{
-    //   ', ' + row.Остаток + (row.Резерв ? ' (' + row.Резерв + ')' : '') + '⧉'
-    //   + ', ' + row.Цена + '₽'}
-    //   </strong>
-    // </span>
-    : null;
+    row.Производитель.replace(/(,(?=\S)|:)/g, ', ')
+      // ', ' + row.Остаток + (row.Резерв ? ' (' + row.Резерв + ')' : '') + '⧉'
+      // + ', ' + row.Цена + '₽'
+    ) : null;
 
   extraContent = (row, col) => row ?
     <Sui.List className={styles.lst}>

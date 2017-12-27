@@ -20,31 +20,88 @@ import disp, { store } from './store';
 // verbose: true
 //------------------------------------------------------------------------------
 // nginx proxy configuration
+// upstream reorders_backend_upstream {
+//   # The keepalive parameter sets the maximum number of idle keepalive connections
+//   # to upstream servers that are preserved in the cache of each worker process. When
+//   # this number is exceeded, the least recently used connections are closed.
+//   keepalive 8;
+//   server 31.210.212.158:65480;
+//   #server 178.210.36.54:65480;
+// }
+  
+// upstream reorders_static_backend_upstream {
+//   keepalive 8;
+//   server 178.210.36.54:5000;
+// }
+  
 // location ~ ^/reorders/api/backend {
-//     rewrite ^/reorders/api/backend(.*)$ /opt-ws/hs/react$1$is_args$args break;
-//     proxy_pass http://31.210.212.158:65480;
-//     proxy_set_header Host $host;
-//     proxy_http_version 1.1;
-//     proxy_read_timeout 120s;
-//     proxy_redirect off;
-//     proxy_set_header Upgrade $http_upgrade;
-//     proxy_set_header Connection "upgrade";
-//     proxy_cache_bypass $http_upgrade;
-//     add_header 'Service-Worker-Allowed' '/';
+//   #access_log /var/log/nginx/reorders_api_access.log proxy;
+//   #error_log /var/log/nginx/reorders_api_error.log debug;
+//   #rewrite_log on;
+
+//   rewrite ^/reorders/api/backend(.*)$ /opt/hs/react$1 break;
+//   proxy_pass http://reorders_backend_upstream;
+
+//   keepalive_disable msie6;
+//   keepalive_requests 1000;
+//   keepalive_timeout 600;
+
+//   proxy_set_header Host $host;
+//   proxy_set_header X-Real-IP $remote_addr;
+//   proxy_set_header X-Real-Port $remote_port;
+//   proxy_set_header X-Server-Addr $server_addr;
+//   proxy_set_header X-Server-Name $server_name;
+//   proxy_set_header X-Server-Port $server_port;
+
+//   proxy_http_version 1.1;
+//   proxy_set_header Connection "Keep-Alive";
+//   proxy_read_timeout     600;
+//   proxy_connect_timeout  600;
+
+//   proxy_redirect off;
+//   proxy_buffering on;
+//   sendfile on;
+//   tcp_nopush on;
+//   proxy_cache_lock on;
+//   proxy_cache_lock_timeout 1h;
+//   proxy_cache_use_stale updating;
+
+//   proxy_set_header 'Service-Worker-Allowed' '/';
+//   add_header 'Service-Worker-Allowed' '/';
 // }
 
-// location ~ ^/reorders {
-//     rewrite ^/reorders(.*)$ /$1$is_args$args break;
-//     proxy_pass http://baza.shintorg48.ru:5000;
-//     proxy_set_header Host $host;
-//     proxy_http_version 1.1;
-//     proxy_read_timeout 120s;
-//     proxy_redirect off;
-//     proxy_set_header Upgrade $http_upgrade;
-//     proxy_set_header Connection "upgrade";
-//     proxy_cache_bypass $http_upgrade;
-//     add_header 'Service-Worker-Allowed' '/';
-// }
+// location ~ ^/reorders(.*)$ {
+
+//   rewrite ^/reorders(.*)$ $1 break;
+//   proxy_pass http://reorders_static_backend_upstream;
+
+//   keepalive_disable msie6;
+//   keepalive_requests 1000;
+//   keepalive_timeout 600;
+
+//   proxy_set_header Host $host;
+//   proxy_set_header X-Real-IP $remote_addr;
+//   proxy_set_header X-Real-Port $remote_port;
+//   proxy_set_header X-Server-Addr $server_addr;
+//   proxy_set_header X-Server-Name $server_name;
+//   proxy_set_header X-Server-Port $server_port;
+
+//   proxy_http_version 1.1;
+//   proxy_set_header Connection "Keep-Alive";
+//   proxy_read_timeout     600;
+//   proxy_connect_timeout  600;
+
+//   proxy_redirect off;
+//   proxy_buffering on;
+//   sendfile on;
+//   tcp_nopush on;
+//   proxy_cache_lock on;
+//   proxy_cache_lock_timeout 1h;
+//   proxy_cache_use_stale updating;
+
+//   proxy_set_header 'Service-Worker-Allowed' '/';
+//   add_header 'Service-Worker-Allowed' '/';
+// }  
 //------------------------------------------------------------------------------
 export function transform(data) {
   if (Array.isArray(data)) {
@@ -231,26 +288,22 @@ export function sfetch(opts, success, fail, start) {
   if (opts.cache === undefined)
     opts.cache = 'default';
 
-  if (opts.method === 'PUT' && opts.r !== undefined)
-    opts.body = JSON.stringify(opts.r);
-
-  let authData;
+  let headers = opts.headers, authData;
   const r = opts.r !== undefined ? { ...opts.r } : undefined;
-
+ 
   if (!opts.noauth) {
     // send auth data
     // antipattern, but only as an exception and it is the fastest method
     const auth = store.getState().getIn([], 'auth');
 
     if (auth && auth.authorized) {
-      const headers = opts.headers ? opts.headers : new Headers();
+      headers = headers ? headers : new Headers();
       authData = auth.uuid + ', ' + auth.hash;
 
       if (auth.token)
         authData += ', ' + auth.token;
 
       headers.append('X-Access-Data', authData);
-      opts.headers = headers;
     }
 
     // need for caching authorized request separate from regular not authorized
@@ -274,39 +327,46 @@ export function sfetch(opts, success, fail, start) {
 
   let url = BACKEND_URL;
 
-  if (opts.method === 'GET' && r !== undefined)
-    url += '?' + serializeURIParams({ r: r });
+  if( r !== undefined ) {
+    if (opts.method === 'GET' )
+      url += '?' + serializeURIParams({r:r});
+    else if (opts.method === 'PUT')
+      opts.body = JSON.stringify(r);
+  }
 
+  // headers = headers ? headers : new Headers();
+  // headers.append('Cache-Control', 'no-cache, must-revalidate');
+  
+  if( headers && !headers.entries().next().done )
+    opts.headers = headers;
+    
   const fetchId = fetch(url, opts).then(response => {
     const contentType = response.headers.get('content-type');
 
-    if (authData) {
-      // check if access token refreshed
-      let xAccessToken = response.headers.get('X-Access-Token');
-      let xAccessTokenTimestamp;
-      if (xAccessToken) {
-        [xAccessToken, xAccessTokenTimestamp] = xAccessToken.split(',');
-        xAccessToken = xAccessToken.trim();
-        xAccessTokenTimestamp = ~~xAccessTokenTimestamp.trim();
-      }
-      // antipattern, but only as an exception and it is the fastest method
-      //const state = store.getState();
-
-      disp(state => {
-        if (xAccessToken) {
-          if (xAccessToken !== state.getIn('auth', 'token')
-            || xAccessTokenTimestamp > state.getIn('auth', 'timestamp'))
-            state = state.editIn([], 'auth', v => {
-              v.token = xAccessToken;
-              v.timestamp = xAccessTokenTimestamp;
-            });
-        }
-        else
-          state = state.editIn([], 'auth', v => { delete v.token; delete v.timestamp; });
-
-        return state;
-      });
+    // check if access token refreshed
+    let xAccessToken = response.headers.get('x-access-token');
+    let xAccessTokenTimestamp;
+    if (xAccessToken) {
+      [xAccessToken, xAccessTokenTimestamp] = xAccessToken.split(',');
+      xAccessToken = xAccessToken.length !== 0 ? xAccessToken.trim() : undefined;
+      xAccessTokenTimestamp = ~~xAccessTokenTimestamp.trim();
     }
+    // antipattern, but only as an exception and it is the fastest method
+    //const state = store.getState();
+
+    disp(state => state.editIn([], 'auth', v => {
+      if (xAccessToken) {
+        if( xAccessToken !== v.token || xAccessTokenTimestamp > v.timestamp ) {
+          v.token = xAccessToken;
+          v.timestamp = xAccessTokenTimestamp;
+        }
+      }
+      else {
+        delete v.token;
+        delete v.timestamp;
+        delete v.authorized;
+      }
+    }), true);
 
     if (contentType) {
       if (contentType.includes('application/json'))
